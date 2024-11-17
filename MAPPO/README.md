@@ -5,9 +5,19 @@
 -->
 # Current Algorithm Version
 
-* Origin: 原版MAPPO，可以选择是否使用CTDE框架
-* Transformer: 加入Transformer，没做
-* Parameters Sharing (PS): 使用参数共享，没做
+## Origin
+
+原版MAPPO，可以选择是否使用CTDE框架：
+
+* 若`ctde=True`则为MAPPO
+* 若`ctde=False`则为IAPPO
+
+## Parameters Sharing (PS)
+
+在原版的基础上增加了“参数共享”选项：
+
+* 若`ps=True`则使用参数共享，所有智能体的Actor和Critic的参数相同
+* 若`ps=False`则与Origin相同
 
 # Current Env Version
 
