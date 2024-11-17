@@ -6,7 +6,7 @@ Company: SEU
 from env.Multi_EV_Env import Multi_EV_Env
 from env.scenarios import load
 
-def EV_Sce_Env(scenario_name, seed=1024):
+def EV_Sce_Env(args):
     '''
     Creates a MultiAgentEnv object as env. This can be used similar to a gym
     environment by calling env.reset() and env.step().
@@ -23,10 +23,10 @@ def EV_Sce_Env(scenario_name, seed=1024):
         .action_space       :   Returns the action space for each agent
         .n                  :   Returns the number of Agents
     '''
-
+    seed = args.seed if args.randomize else None
     # load scenario from script
-    scenario = load(scenario_name + ".py").Scenario(frame=0.05, seed=seed)
+    scenario = load(args.sce_name + ".py").Scenario(frame=0.05, seed=seed)
     # create multiagent environment
-    env = Multi_EV_Env(scenario=scenario, seed=seed)
+    env = Multi_EV_Env(scenario=scenario, seed=seed, args=args)
 
     return env

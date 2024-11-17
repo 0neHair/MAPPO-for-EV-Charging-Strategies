@@ -29,7 +29,8 @@ class Multi_EV_Env(gym.Env):
     metadata = {
         'render.modes': ['human', 'rgb_array']
     }
-    def __init__(self, scenario, seed=None):
+    def __init__(self, args, scenario, seed=None):
+        self.args = args
         # 设定随机数
         if seed is None:
             np.random.seed(1)
@@ -62,10 +63,20 @@ class Multi_EV_Env(gym.Env):
         # self.state_dim = len(self.state_name) # 状态维度
         # self.share_name = ['agent_SOC', 'agent_pos', 'agent_usingtime', 'agent_charging_ts', 'is_finish'] * self.agent_num + self.cs_waiting_time
         # self.share_dim = len(self.share_name)
-        self.state_name = ['agent_SOC', 'exp_SOC', 'agent_pos', 'agent_usingtime', 'agent_charging_ts', 'agent_next_waiting', 'is_finish']
+        self.state_name = [
+                'agent_SOC', 'exp_SOC', 'agent_pos', 
+                'agent_usingtime', 'agent_charging_ts', 'agent_next_waiting', 'is_finish'
+                ]
         self.state_dim = len(self.state_name) # 状态维度
-        self.share_name = ['agent_SOC', 'exp_SOC', 'agent_pos', 'agent_usingtime', 'agent_charging_ts', 'is_finish'] * self.agent_num + self.cs_waiting_time
+        if self.args.ps:
+            self.state_dim += self.agent_num # 状态维度
+        self.share_name = [
+            'agent_SOC', 'exp_SOC', 'agent_pos', 
+            'agent_usingtime', 'agent_charging_ts', 'is_finish'
+            ] * self.agent_num + self.cs_waiting_time
         self.share_dim = len(self.share_name)
+        if self.args.ps:
+            self.share_dim += self.agent_num # 状态维度
         # 状态空间
         self.observation_space = [
             spaces.Box(
@@ -143,6 +154,8 @@ class Multi_EV_Env(gym.Env):
                             
                 self.cs_waiting_time[i] = min(self.cs_charger_waiting_time[i])
                 self.cs_charger_min_id[i] = self.cs_charger_waiting_time[i].index(self.cs_waiting_time[i])
+                
+            #!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             self.cs_save_memory()
             
         for agent in agent_to_remove: # 将不再更新的智能体去掉
@@ -226,7 +239,12 @@ class Multi_EV_Env(gym.Env):
         if cs_pos != self.num_position-1:
             agent_next_waiting = self.cs_waiting_time[cs_pos]
         
-        return np.array([agent_SOC, agent_exp_SOC, agent_pos, agent_usingtime, agent_charging_ts, agent_next_waiting, agent_complete_trip])
+        obs = [agent_SOC, agent_exp_SOC, agent_pos, agent_usingtime, agent_charging_ts, agent_next_waiting, agent_complete_trip]
+        if self.args.ps:
+            one_hot = [0] * self.agent_num
+            one_hot[agent.id] = 1
+            obs =  obs + one_hot
+        return np.array(obs)
     
     # def get_obs(self, agent: EV_Agent):
     #     # 智能体观测量，即状态

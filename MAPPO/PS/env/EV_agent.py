@@ -4,16 +4,15 @@ Date: 2024-03-31 19:28:17
 Company: SEU
 '''
 class EV_Agent():
-    def __init__(
-            self, 
-            id, frame, 
-            route, 
-            action_list, 
-            enter_time,
-            SOC_init=0.5, SOC_exp=0.5, 
-            SOC90_penalty=0, SOC20_penalty=0,
-            consume=0.15, speed=100, E_max=60
-        ):
+    def __init__(self, 
+                 id, frame, 
+                 route, 
+                 action_list, 
+                 enter_time,
+                 SOC_init=0.5, SOC_exp=0.5, 
+                 SOC90_penalty=0, SOC20_penalty=0,
+                 consume=0.15, speed=100, E_max=60
+                 ):
         self.id = id
         self.frame = frame #  帧
         self.route = route # 路径
@@ -196,13 +195,13 @@ class EV_Agent():
             
             if self.SOC < self.SOC_min: # 没电，没完成行程
                 self.is_done = True
-                reward -= self.unfinished_penalty            
+                reward -= 10            
             else:
                 if self.current_pos == self.total_pos*2 - 1: # 即将到达终点
                     self.is_done = True
                     self.finish_trip = True
                     if self.SOC < self.SOC_exp:
-                        reward -= self.unexpected_penalty
+                        reward -= 5
         else: # 选择充电，然后进行状态转移
             # 充电
             self.charging_time += charging_time
