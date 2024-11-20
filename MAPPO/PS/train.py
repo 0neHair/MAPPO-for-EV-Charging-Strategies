@@ -24,14 +24,14 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sce_name", type=str, default="test_3")
-    parser.add_argument("--filename", type=str, default="T")
+    parser.add_argument("--sce_name", type=str, default="LS1_3P")
+    parser.add_argument("--filename", type=str, default="Train")
     parser.add_argument("--ctde", type=bool, default=True)
     parser.add_argument("--expert", type=bool, default=False)
     parser.add_argument("--randomize", type=bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--num_env", type=int, default=4) # 环境数
-    parser.add_argument("--num_update", type=int, default=1000) # 最大更新轮次
+    parser.add_argument("--num_env", type=int, default=6) # 环境数
+    parser.add_argument("--num_update", type=int, default=2000) # 最大更新轮次
     parser.add_argument("--save_freq", type=int, default=50) # 保存频率
 
     parser.add_argument("--ps", type=bool, default=True) # parameter sharing
@@ -282,7 +282,10 @@ def main():
     #############################################
 
     envs = make_train_env(args, agent_num)
-    writer = SummaryWriter(log_dir="logs/{}_{}_{}_{}".format(args.sce_name, args.filename, mode, int(time.time())))
+    if args.ps:
+        writer = SummaryWriter(log_dir="logs/{}_{}_{}_{}_PS".format(args.sce_name, args.filename, mode, int(time.time())))
+    else:
+        writer = SummaryWriter(log_dir="logs/{}_{}_{}_{}".format(args.sce_name, args.filename, mode, int(time.time())))
     writer.add_text("HyperParameters", 
                     "|param|value|\n|-|-|\n%s" % ("\n".join([f"|{key}|{value}|" for key, value in vars(args).items()])))
     
@@ -304,7 +307,7 @@ def main():
             buffer=buffer, device=device, agent_num=agent_num,
             args=args
             )
-        path = "save/{}_{}".format(args.sce_name, args.filename)
+        path = "save/{}_{}_PS".format(args.sce_name, args.filename)
         if not os.path.exists(path):
             os.makedirs(path)
         # ppo.load("save/{}_{}/agent_{}".format(args.sce_name, args.filename, mode))
