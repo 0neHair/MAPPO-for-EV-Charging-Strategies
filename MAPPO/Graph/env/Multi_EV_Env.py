@@ -52,7 +52,7 @@ class Multi_EV_Env(gym.Env):
     metadata = {
         'render.modes': ['human', 'rgb_array']
     }
-    def __init__(self, scenario, ps=False, seed=None):
+    def __init__(self, scenario, seed=None, ps=False):
         # 设定随机数
         if seed is None:
             np.random.seed(1)
