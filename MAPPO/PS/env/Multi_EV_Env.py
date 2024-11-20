@@ -29,8 +29,8 @@ class Multi_EV_Env(gym.Env):
     metadata = {
         'render.modes': ['human', 'rgb_array']
     }
-    def __init__(self, args, scenario, seed=None):
-        self.args = args
+    def __init__(self, scenario, seed=None, ps=False):
+        self.ps = ps
         # 设定随机数
         if seed is None:
             np.random.seed(1)
@@ -68,14 +68,14 @@ class Multi_EV_Env(gym.Env):
                 'agent_usingtime', 'agent_charging_ts', 'agent_next_waiting', 'is_finish'
                 ]
         self.state_dim = len(self.state_name) # 状态维度
-        if self.args.ps:
+        if self.ps:
             self.state_dim += self.agent_num # 状态维度
         self.share_name = [
             'agent_SOC', 'exp_SOC', 'agent_pos', 
             'agent_usingtime', 'agent_charging_ts', 'is_finish'
             ] * self.agent_num + self.cs_waiting_time
         self.share_dim = len(self.share_name)
-        if self.args.ps:
+        if self.ps:
             self.share_dim += self.agent_num # 状态维度
         # 状态空间
         self.observation_space = [
@@ -240,7 +240,7 @@ class Multi_EV_Env(gym.Env):
             agent_next_waiting = self.cs_waiting_time[cs_pos]
         
         obs = [agent_SOC, agent_exp_SOC, agent_pos, agent_usingtime, agent_charging_ts, agent_next_waiting, agent_complete_trip]
-        if self.args.ps:
+        if self.ps:
             one_hot = [0] * self.agent_num
             one_hot[agent.id] = 1
             obs =  obs + one_hot
