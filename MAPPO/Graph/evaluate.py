@@ -22,8 +22,8 @@ def Evaluate(env, agents, args, mode, agent_num):
                     activate_agent_ri, activate_to_ract \
                         = env.step(default_action)
     while 1:
-        caction_n = np.array([[-1 for _ in range(agent_num)] for __ in range(args.num_env)])
-        raction_n = np.array([[-1 for _ in range(agent_num)] for __ in range(args.num_env)])
+        caction_n = np.array([-1 for _ in range(agent_num)])
+        raction_n = np.array([-1 for _ in range(agent_num)])
         
         # 决策充电
         for i, agent_i in enumerate(activate_agent_ci):
@@ -103,9 +103,27 @@ def Evaluate(env, agents, args, mode, agent_num):
     dir = 'output/{}_{}_{}'.format(args.sce_name, args.filename, mode)
     if not os.path.exists(dir):
         os.mkdir(dir)
+    # Map
+    columns = ['time']
+    for edge in env.edge_dic.keys():
+        columns.append(edge)
+    time_seq = env.time_memory
+    df_route = pd.DataFrame(columns=columns)
+    for i in range(len(time_seq)):
+        df_route.loc[i, 'time'] = round(time_seq[i], 2)
+        for edge in env.edge_dic.keys():
+            cars_list = env.edge_state_memory[i][edge]
+            if cars_list:
+                cars_list_str = str(cars_list[0])
+                for car_id in range(1, len(cars_list)):
+                    cars_list_str += '-'+str(cars_list[car_id])
+            else:
+                cars_list_str = ""
+            df_route.loc[i, edge] = cars_list_str
+    df_route.to_csv(dir+'/Map.csv', index=False)
     # CS
     columns = ['time']
-    for i in range(env.num_cs):
+    for i in range(1, env.num_cs-1):
         cs = 'CS{}'.format(i)
         columns.append(cs+'_waiting_num')
         columns.append(cs+'_charging_num')
@@ -122,21 +140,29 @@ def Evaluate(env, agents, args, mode, agent_num):
     df_cs.to_csv(dir+'/CS.csv', index=False)
     # EV
     df_ev_g = pd.DataFrame(columns=['EV', 'Waiting_time', 'Charging_time', 'Total'])
-    columns = ['time', 'distance', 'position', 'state', 'act_mode', 'SOC', 'action']
+    ccolumns = ['time', 'distance', 'position', 'state', 'cact_mode', 'SOC', 'action']
+    rcolumns = ['num', 'edge']
     if not os.path.exists(dir + '/EV'):
         os.mkdir(dir + '/EV')
     for j, ev in enumerate(env.agents):
-        df_ev = pd.DataFrame(columns=columns)
+        df_ev_c = pd.DataFrame(columns=ccolumns)
         time_seq = ev.time_memory
         for i in range(len(time_seq)):
-            df_ev.loc[i, 'time'] = round(time_seq[i], 2)
-            df_ev.loc[i, 'distance'] = ev.trip_memory[i]
-            df_ev.loc[i, 'position'] = ev.pos_memory[i]
-            df_ev.loc[i, 'state'] = ev.state_memory[i]
-            df_ev.loc[i, 'act_mode'] = int(ev.activity_memory[i])
-            df_ev.loc[i, 'SOC'] = ev.SOC_memory[i]
-            df_ev.loc[i, 'action'] = ev.action_choose_memory[i]
-        df_ev.to_csv(dir + '/EV/EV{}.csv'.format(ev.id), index=False)
+            df_ev_c.loc[i, 'time'] = round(time_seq[i], 2)
+            df_ev_c.loc[i, 'distance'] = ev.trip_memory[i]
+            df_ev_c.loc[i, 'position'] = ev.pos_memory[i]
+            df_ev_c.loc[i, 'state'] = ev.state_memory[i]
+            df_ev_c.loc[i, 'act_mode'] = int(ev.activity_memory[i])
+            df_ev_c.loc[i, 'SOC'] = ev.SOC_memory[i]
+            df_ev_c.loc[i, 'action'] = ev.action_choose_memory[i]
+        df_ev_c.to_csv(dir + '/EV/EV{}.csv'.format(ev.id), index=False)
+        df_ev_r = pd.DataFrame(columns=rcolumns)
+        edge_i = 0
+        for edge in ev.total_route:
+            df_ev_r.loc[edge_i, 'num'] = edge_i
+            df_ev_r.loc[edge_i, 'edge'] = edge
+            edge_i += 1
+        df_ev_r.to_csv(dir + '/EV/EV{}_route.csv'.format(ev.id), index=False)
 
         df_ev_g.loc[j, 'EV'] = ev.id
         df_ev_g.loc[j, 'Waiting_time'] = ev.total_waiting

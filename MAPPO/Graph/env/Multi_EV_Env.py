@@ -144,6 +144,12 @@ class Multi_EV_Env(gym.Env):
         self.cs_waiting_cars_num_memory = []
         self.cs_charging_cars_num_memory = []
         self.cs_waiting_time_memory = []
+        self.edge_state_memory = []
+        self.edge_dic = {}
+        for i in range(self.edge_index.shape[1]):
+            o = self.edge_index[0][i]
+            d = self.edge_index[1][i]
+            self.edge_dic[str(o)+"-"+str(d)] = []
         
     def seed(self, seed=None):
         if seed is None:
@@ -165,7 +171,7 @@ class Multi_EV_Env(gym.Env):
         run_step = True
         for i, agent in enumerate(self.agents):
             if agent.is_routing:
-                    self.set_n_raction(agent, raction_n[i]) # 设置动作
+                self.set_n_raction(agent, raction_n[i]) # 设置动作
             if agent.is_choosing:
                 self.set_n_caction(agent, caction_n[i]) # 设置动作
                 if caction_n[i] == 0:
@@ -202,8 +208,7 @@ class Multi_EV_Env(gym.Env):
                     activate_to_cact.append(False)
                     agent_to_remove.append(agent)
             self.update_cs_info(step=True)
-                
-            # self.cs_save_memory()
+            self.cs_save_memory()
         for agent in agent_to_remove: # 将不再更新的智能体去掉
             self.agents_active.remove(agent)
         
@@ -262,31 +267,37 @@ class Multi_EV_Env(gym.Env):
             self.cs_waiting_time[i] = min(self.cs_charger_waiting_time[i])
             self.cs_charger_min_id[i] = self.cs_charger_waiting_time[i].index(self.cs_waiting_time[i])
     
-    # def cs_save_memory(self):
-    #     cs_waiting_cars = [[] for _ in range(self.num_cs)]
-    #     cs_charging_cars = [[] for _ in range(self.num_cs)]
-    #     cs_waiting_num_cars = [0 for _ in range(self.num_cs)]
-    #     cs_charging_num_cars = [0 for _ in range(self.num_cs)]
-    #     for i, agent in enumerate(self.agents):
-    #         pos = agent.current_pos
-    #         if pos % 2 == 0 and pos != 0 and agent.is_charging:
-    #             cs_pos = pos//2 - 1
-    #             if cs_pos < self.num_cs:
-    #                 if agent.waiting_time == 0:
-    #                     cs_charging_cars[cs_pos].append(agent.id)
-    #                 else:
-    #                     cs_waiting_cars[cs_pos].append(agent.id)
-    #     for i in range(self.num_cs):
-    #         cs_waiting_num_cars[i] = len(cs_waiting_cars[i])
-    #         cs_charging_num_cars[i] = len(cs_charging_cars[i])
+    def cs_save_memory(self):
+        cs_waiting_cars = [[] for _ in range(self.num_cs)]
+        cs_charging_cars = [[] for _ in range(self.num_cs)]
+        cs_waiting_num_cars = [0 for _ in range(self.num_cs)]
+        cs_charging_num_cars = [0 for _ in range(self.num_cs)]
+        edge_cars = copy.deepcopy(self.edge_dic) # 边信息
+
+        for i, agent in enumerate(self.agents):
+            if agent.is_charging:
+                pos = agent.target_pos
+                if agent.waiting_time == 0:
+                    cs_charging_cars[pos].append(agent.id)
+                else:
+                    cs_waiting_cars[pos].append(agent.id)
+            else:
+                pos = agent.current_position
+                if pos in edge_cars.keys():
+                    edge_cars[pos].append(agent.id)
+                
+        for i in range(self.num_cs):
+            cs_waiting_num_cars[i] = len(cs_waiting_cars[i])
+            cs_charging_num_cars[i] = len(cs_charging_cars[i])
             
-    #     self.time_memory.append(self.total_time)
-    #     self.cs_waiting_cars_num_memory.append(copy.deepcopy(cs_waiting_num_cars))
-    #     self.cs_charging_cars_num_memory.append(copy.deepcopy(cs_charging_num_cars))
-    #     self.cs_waiting_cars_memory.append(copy.deepcopy(cs_waiting_cars))
-    #     self.cs_charging_cars_memory.append(copy.deepcopy(cs_charging_cars))
-    #     self.cs_waiting_time_memory.append(copy.deepcopy(self.cs_waiting_time))
-    
+        self.time_memory.append(self.total_time)
+        self.cs_waiting_cars_num_memory.append(copy.deepcopy(cs_waiting_num_cars))
+        self.cs_charging_cars_num_memory.append(copy.deepcopy(cs_charging_num_cars))
+        self.cs_waiting_cars_memory.append(copy.deepcopy(cs_waiting_cars))
+        self.cs_charging_cars_memory.append(copy.deepcopy(cs_charging_cars))
+        self.cs_waiting_time_memory.append(copy.deepcopy(self.cs_waiting_time))
+        self.edge_state_memory.append(copy.deepcopy(edge_cars))
+        
     def reset(self):
         self.total_time = 0
         # 地图
@@ -306,6 +317,7 @@ class Multi_EV_Env(gym.Env):
         self.cs_waiting_time_memory = []    
         self.cs_waiting_cars_num_memory = []
         self.cs_charging_cars_num_memory = []
+        self.edge_state_memory = []
                     
     def get_obs(self, agent: EV_Agent):
         # 智能体观测量，即状态
@@ -373,7 +385,7 @@ class Multi_EV_Env(gym.Env):
         if caction == 0:
             agent.set_caction(caction) # 将选择和充电时间输入给智能体
         else:
-            postion = agent.target_pos
+            postion = agent.target_pos # EV当前所在CS
             agent_SOC = agent.SOC
             waiting_time = self.cs_waiting_time[postion]
             act_SOC = self.caction_list[caction]
@@ -430,6 +442,7 @@ class Multi_EV_Env(gym.Env):
                     )
                 print('\t Action_list: ', agent.action_memory)
                 print('\t Action_type: ', agent.action_type)
+                print('\t Route: ', agent.total_route)
         for i, cs in enumerate(self.cs_charger_waiting_time):
             print('CS_{}: '.format(i), end='')
             for charger in cs:

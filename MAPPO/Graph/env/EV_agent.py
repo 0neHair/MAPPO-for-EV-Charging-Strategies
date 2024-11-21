@@ -35,10 +35,8 @@ class EV_Agent():
             
         # 路径动作
         self.raction_list =  raction_list
-        self.raction_memory = []
         # 充电动作
         self.caction_list = caction_list # 动作序列
-        self.caction_memory = []
         self.final_pos = self.map_adj.shape[0]-1
         
         self.target_pos = 0 # 前往的下一个节点
@@ -48,7 +46,6 @@ class EV_Agent():
         self.charging_time = 0 # 充电时间还有多久
         self.waiting_charging_time = 0  # 充电等待时间总共还有多久
         self.time_to_next = -1 # 到下一个决策点还有多久
-        self.action_memory = []
         self.action_type = []
 
         self.enter_time = enter_time # 进入时间
@@ -104,12 +101,17 @@ class EV_Agent():
         self.time_memory = []
         self.reward_memory = []
         self.total_run_dis = 0
+        
+        self.total_route = []
         self.state_memory = []
         self.trip_memory = []
         self.pos_memory = []
         self.activity_memory = []
         self.SOC_memory = []
         self.action_choose_memory = []
+        self.caction_memory = []
+        self.raction_memory = []
+        self.action_memory = []
         
         self.total_used_time = 0 # 累计被使用时间
         self.charging_ts = 0 # 累计充电次数
@@ -149,6 +151,7 @@ class EV_Agent():
         # 数据存档
         self.time_memory = []
         self.reward_memory = []
+        self.total_route = []
         self.total_run_dis = 0
         self.ev_state = 0 # 0-在路上，1-排队，2-充电
         self.current_position = 'P0'
@@ -217,14 +220,14 @@ class EV_Agent():
         
         self.time_memory.append(time)
         self.trip_memory.append(self.total_run_dis)
-        # self.pos_memory.append(self.current_pos)
-        self.activity_memory.append(len(self.action_memory) * self.is_charging)
+        self.pos_memory.append(self.current_position)
+        self.activity_memory.append(len(self.caction_memory) * self.is_charging)
         self.state_memory.append(self.ev_state)
         self.SOC_memory.append(self.SOC)
-        if self.is_charging == False:
-            self.action_choose_memory.append(-1)
+        if self.is_charging == True:
+            self.action_choose_memory.append(self.caction_memory[-1])
         else:
-            self.action_choose_memory.append(self.action_memory[-1])
+            self.action_choose_memory.append(-1)
         
     def set_caction(self, caction=0, waiting_time=0.0, charging_time=0.0):
         '''
@@ -299,6 +302,7 @@ class EV_Agent():
         self.target_pos = next_pos
         self.current_cs = 'P'+str(self.target_pos)
         self.current_road = od # 记录所在位置
+        self.total_route.append(od)
 
         # 计算路段消耗
         consume_SOC = dis_to_next * self.consume / self.E_max # 行程消耗
