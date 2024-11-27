@@ -50,10 +50,10 @@ class Scenario(): # Sioux-Falls transportation system
         # 动作
         self.caction_list = [i/100 for i in range(0, 105, 5)] # 动作列表
         self.caction_list[0] = 1.5 # 动作列表
-        self.raction_list = [0, 1]
+        self.raction_list = [i for i in range(len(self.map_adj))] # 动作列表
         # 智能体
         self.agents = [] # 智能体列表
-        total_vehicle_num = 20
+        total_vehicle_num = 40
         active_time_list = np.sort(np.round(np.random.uniform(0, 1, (total_vehicle_num)), 2))
         for i in range(0, len(active_time_list)):
             SOC_init = 0.5

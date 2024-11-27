@@ -61,7 +61,7 @@ class Scenario():
         # 动作
         self.caction_list = [i/100 for i in range(0, 105, 5)] # 动作列表
         self.caction_list[0] = 1.5 # 动作列表
-        self.raction_list = [0, 1]
+        self.raction_list = [i for i in range(len(self.map_adj))] # 动作列表
         # 智能体
         self.agents = [] # 智能体列表
         agent = EV_Agent(

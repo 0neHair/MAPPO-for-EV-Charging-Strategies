@@ -23,15 +23,15 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sce_name", type=str, default="test_2")
-    parser.add_argument("--filename", type=str, default="T1")
-    parser.add_argument("--train", type=bool, default=False)
+    parser.add_argument("--sce_name", type=str, default="SF")
+    parser.add_argument("--filename", type=str, default="T2")
+    parser.add_argument("--train", type=bool, default=True)
 
     parser.add_argument("--ctde", type=bool, default=True)
     parser.add_argument("--expert", type=bool, default=False)
     parser.add_argument("--randomize", type=bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
-    parser.add_argument("--num_env", type=int, default=2) # 环境数
+    parser.add_argument("--num_env", type=int, default=6) # 环境数
     parser.add_argument("--num_update", type=int, default=1000) # 最大更新轮次
     parser.add_argument("--save_freq", type=int, default=50) # 保存频率
 
