@@ -6,18 +6,19 @@ Company: SEU
 import numpy as np
 
 class EV_Agent():
-    def __init__(self, 
-                 id, frame, 
-                map_adj,
-                edge_index,
-                edge_attr,
-                caction_list, 
-                raction_list, 
-                 enter_time,
-                 SOC_init=0.5, SOC_exp=0.5, 
-                 SOC90_penalty=0, SOC20_penalty=0,
-                 consume=0.15, speed=100, E_max=60
-                 ):
+    def __init__(
+        self, 
+        id, frame, 
+        map_adj,
+        edge_index,
+        edge_attr,
+        caction_list, 
+        raction_list, 
+        enter_time,
+        SOC_init=0.5, SOC_exp=0.5, 
+        SOC90_penalty=0, SOC20_penalty=0,
+        consume=0.15, speed=100, E_max=60
+        ):
         self.id = id
         self.frame = frame #  帧
         
@@ -205,6 +206,7 @@ class EV_Agent():
             else: 
                 # 否则行驶
                 self.current_position = self.current_road
+                assert self.time_to_next > 0, "BUG exists"
                 self.time_to_next -= self.frame
                 self.total_run_dis += self.frame * self.speed
                 if round(self.time_to_next, 2) <= 0:

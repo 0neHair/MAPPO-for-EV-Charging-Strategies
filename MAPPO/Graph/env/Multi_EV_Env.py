@@ -187,15 +187,16 @@ class Multi_EV_Env(gym.Env):
         while run_step and self.agents_active:
             self.total_time += self.frame
             for i, agent in enumerate(self.agents_active):
+
+                agent.step(time=self.total_time) # 智能体运行
+            
                 if round(self.total_time, 2) >= agent.enter_time and not agent.is_active: # 到达EV进入时间，则启动
                     agent.activate()
-                
-                agent.step(time=self.total_time) # 智能体运行
-                
                 if agent.is_routing: # 如果在分叉点，记录并跳出
                     run_step = False
                     activate_agent_ri.append(agent.id)
                     activate_to_ract.append(agent.is_routing)
+
                 if agent.is_choosing: # 如果在CS，记录并跳出
                     run_step = False
                     activate_agent_ci.append(agent.id)
