@@ -19,6 +19,14 @@
 * 若`ps=True`则使用参数共享，所有智能体的Actor和Critic的参数相同
 * 若`ps=False`则与Origin相同
 
+# Graph_H
+
+充电-路径联合优化，在原版MAPPO的基础上进行分层，上层决策路径，下层决策充电
+
+# 2DAction
+
+充电-路径联合优化，在原版MAPPO的基础上采用二维动作
+
 # Current Env Version
 
 * Agent State:
