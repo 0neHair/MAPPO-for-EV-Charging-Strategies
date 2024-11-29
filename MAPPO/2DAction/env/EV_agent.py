@@ -202,7 +202,7 @@ class EV_Agent():
                     self.is_charging = False # 状态变更
                     # self.current_pos += 1 # 更新坐标
                     self.ev_state = 0
-                    self.if_choose_route() # 看要不要进行路段选择
+                    # self.if_choose_route() # 看要不要进行路段选择
             else: 
                 # 否则行驶
                 self.current_position = self.current_road
@@ -245,6 +245,9 @@ class EV_Agent():
         self.action_type.append('c')
         self.is_choosing = False # 不处于激活状态
         reward = 0
+        
+        if self.target_pos == 0:
+            caction = 0
         
         if caction == 0: # 选择不充电
             pass
@@ -336,6 +339,7 @@ class EV_Agent():
         choose_set = choose_set[choose_set > 0] - 1
         if choose_set.shape[0] > 1:
             self.is_routing = choose_set.shape[0] # 设置选路标记
+            self.is_choosing = True
         else:
             self.set_raction(raction=choose_set[0], reset_record=False)
     

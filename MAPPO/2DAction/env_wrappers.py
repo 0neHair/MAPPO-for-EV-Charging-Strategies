@@ -2,7 +2,6 @@
 Modified from OpenAI Baselines code to work with multi-agent envs
 """
 import numpy as np
-import torch
 from multiprocessing import Process, Pipe
 from abc import ABC, abstractmethod
 
@@ -111,16 +110,13 @@ def worker(remote, parent_remote, env_fn_wrapper):
     while True:
         cmd, data = remote.recv()
         if cmd == 'step':
-            obs_n, obs_feature_n, obs_mask_n, \
-                share_obs, global_cs_feature, \
-                    done_n, creward_n, rreward_n, cact_n, ract_n, \
-                        activate_agent_ci, activate_to_cact, activate_agent_ri, activate_to_ract \
-                            = env.step(data)
+            obs_n, obs_mask_n, share_obs, \
+                done_n, reward_n, cact_n, ract_n, \
+                    activate_agent_i, activate_to_act = env.step(data)
             remote.send((
-                obs_n, obs_feature_n, obs_mask_n, \
-                    share_obs, global_cs_feature, \
-                        done_n, creward_n, rreward_n, cact_n, ract_n, \
-                            activate_agent_ci, activate_to_cact, activate_agent_ri, activate_to_ract
+                obs_n, obs_mask_n, share_obs, \
+                    done_n, reward_n, cact_n, ract_n, \
+                        activate_agent_i, activate_to_act
                     ))
         elif cmd == 'reset':
             env.reset()
@@ -131,16 +127,13 @@ def worker(remote, parent_remote, env_fn_wrapper):
             remote.send(is_f)
         elif cmd == 'reset_process':
             env.reset()
-            obs_n, obs_feature_n, obs_mask_n, \
-                share_obs, global_cs_feature, \
-                    done_n, creward_n, rreward_n, cact_n, ract_n, \
-                        activate_agent_ci, activate_to_cact, activate_agent_ri, activate_to_ract \
-                            = env.step(data)
+            obs_n, obs_mask_n, share_obs, \
+                done_n, reward_n, cact_n, ract_n, \
+                    activate_agent_i, activate_to_act = env.step(data)
             remote.send((
-                obs_n, obs_feature_n, obs_mask_n, \
-                    share_obs, global_cs_feature, \
-                        done_n, creward_n, rreward_n, cact_n, ract_n, \
-                            activate_agent_ci, activate_to_cact, activate_agent_ri, activate_to_ract
+                obs_n, obs_mask_n, share_obs, \
+                    done_n, reward_n, cact_n, ract_n, \
+                        activate_agent_i, activate_to_act
                     ))
         elif cmd == 'close':
             env.close()
@@ -187,16 +180,13 @@ class SubprocVecEnv(ShareVecEnv):
     def step_wait(self):
         results = [remote.recv() for remote in self.remotes]
         self.waiting = False
-        obs_n, obs_feature_n, obs_mask_n, \
-            share_obs, global_cs_feature, \
-                done_n, creward_n, rreward_n, cact_n, ract_n, \
-                    activate_agent_ci, activate_to_cact, \
-                        activate_agent_ri, activate_to_ract = zip(*results)
-        return np.stack(obs_n), np.stack(obs_feature_n), np.stack(obs_mask_n), \
-                np.stack(share_obs), np.stack(global_cs_feature), \
-                    np.stack(done_n), np.stack(creward_n), np.stack(rreward_n), np.stack(cact_n), np.stack(ract_n), \
-                        list(activate_agent_ci), list(activate_to_cact), \
-                            list(activate_agent_ri), list(activate_to_ract)
+        obs_n, obs_mask_n, share_obs, \
+            done_n, reward_n, cact_n, ract_n, \
+                activate_agent_i, activate_to_act = zip(*results)
+        return np.stack(obs_n), np.stack(obs_mask_n), \
+                np.stack(share_obs), \
+                    np.stack(done_n), np.stack(reward_n), np.stack(cact_n), np.stack(ract_n), \
+                        list(activate_agent_i), list(activate_to_act)
 
     def reset(self):
         for remote in self.remotes:
@@ -218,16 +208,13 @@ class SubprocVecEnv(ShareVecEnv):
         results = []
         for i in index: 
             results.append(self.remotes[i].recv())
-        obs_n, obs_feature_n, obs_mask_n, \
-            share_obs, global_cs_feature, \
-                done_n, creward_n, rreward_n, cact_n, ract_n, \
-                    activate_agent_ci, activate_to_cact, \
-                        activate_agent_ri, activate_to_ract = zip(*results)
-        return np.stack(obs_n), np.stack(obs_feature_n), np.stack(obs_mask_n), \
-                np.stack(share_obs), np.stack(global_cs_feature), \
-                    np.stack(done_n), np.stack(creward_n), np.stack(rreward_n), np.stack(cact_n), np.stack(ract_n), \
-                        list(activate_agent_ci), list(activate_to_cact), \
-                            list(activate_agent_ri), list(activate_to_ract)
+        obs_n, obs_mask_n, share_obs, \
+                done_n, reward_n, cact_n, ract_n, \
+                    activate_agent_i, activate_to_act = zip(*results)
+        return np.stack(obs_n), np.stack(obs_mask_n), \
+                np.stack(share_obs), \
+                    np.stack(done_n), np.stack(reward_n), np.stack(cact_n), np.stack(ract_n), \
+                        list(activate_agent_i), list(activate_to_act)
     def close(self):
         if self.closed:
             return
@@ -259,19 +246,16 @@ class DummyVecEnv(ShareVecEnv):
 
     def step_wait(self):
         results = [env.step((ca, ra)) for (ca, ra, env) in zip(self.cactions, self.ractions, self.envs)] # type: ignore
-        obs_n, obs_feature_n, obs_mask_n, \
-            share_obs, global_cs_feature, \
-                done_n, creward_n, rreward_n, cact_n, ract_n, \
-                    activate_agent_ci, activate_to_cact, \
-                        activate_agent_ri, activate_to_ract = zip(*results)
+        obs_n, obs_mask_n, share_obs, \
+            done_n, reward_n, cact_n, ract_n, \
+                activate_agent_i, activate_to_act = zip(*results)
         self.cactions = None
         self.ractions = None
-        return np.stack(obs_n), np.stack(obs_feature_n), np.stack(obs_mask_n), \
-                np.stack(share_obs), np.stack(global_cs_feature), \
-                    np.stack(done_n), np.stack(creward_n), np.stack(rreward_n), np.stack(cact_n), np.stack(ract_n), \
-                        list(activate_agent_ci), list(activate_to_cact), \
-                            list(activate_agent_ri), list(activate_to_ract)
-
+        return np.stack(obs_n), np.stack(obs_mask_n), \
+                np.stack(share_obs),\
+                    np.stack(done_n), np.stack(reward_n), np.stack(cact_n), np.stack(ract_n), \
+                        list(activate_agent_i), list(activate_to_act)
+                        
     def is_finished(self):
         index = []
         for i, env in enumerate(self.envs):
@@ -284,16 +268,13 @@ class DummyVecEnv(ShareVecEnv):
             self.envs[i].reset()
             
         results = [self.envs[i].step(self.default_action) for i in index] # type: ignore
-        obs_n, obs_feature_n, obs_mask_n, \
-            share_obs, global_cs_feature, \
-                done_n, creward_n, rreward_n, cact_n, ract_n, \
-                    activate_agent_ci, activate_to_cact, \
-                        activate_agent_ri, activate_to_ract = zip(*results)
-        return np.stack(obs_n), np.stack(obs_feature_n), np.stack(obs_mask_n), \
-                np.stack(share_obs), np.stack(global_cs_feature), \
-                    np.stack(done_n), np.stack(creward_n), np.stack(rreward_n), np.stack(cact_n), np.stack(ract_n), \
-                        list(activate_agent_ci), list(activate_to_cact), \
-                            list(activate_agent_ri), list(activate_to_ract)
+        obs_n, obs_mask_n, share_obs, \
+            done_n, reward_n, cact_n, ract_n, \
+                activate_agent_i, activate_to_act = zip(*results)
+        return np.stack(obs_n), np.stack(obs_mask_n), \
+                np.stack(share_obs),\
+                    np.stack(done_n), np.stack(reward_n), np.stack(cact_n), np.stack(ract_n), \
+                        list(activate_agent_i), list(activate_to_act)
     
     def reset(self):
         for env in self.envs:

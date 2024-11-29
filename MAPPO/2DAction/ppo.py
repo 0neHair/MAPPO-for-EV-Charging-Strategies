@@ -16,74 +16,73 @@ def layer_init(layer, gain=np.sqrt(2), bias=0.):
         nn.init.constant_(layer.bias, bias)
     return layer
 
-class GNet(nn.Module):
-    def __init__(
-        self, 
-        state_shape, share_shape, action_dim, 
-        action_list, 
-        args
-    ):
-        super(GNet, self).__init__()
-        self.state_dim = state_shape[1]
-        self.action_dim = action_dim
-        self.share_dim = share_shape[1]
-        self.num_pos = state_shape[0]
-        self.action_list = action_list
-        # -------- init policy network --------
-        last_layer_dim = self.state_dim
-        policy_net = []
-        for current_layer_dim in [32, 32]:
-            policy_net.append(
-                (layer_init(GCNConv(last_layer_dim, current_layer_dim)), 'x, edge_index -> x')
-                )
-            policy_net.append(nn.Tanh())
-            last_layer_dim = current_layer_dim
-        policy_net.extend(
-            [
-                (layer_init(nn.Linear(last_layer_dim, last_layer_dim)), 'x -> x'),
-                nn.Tanh(),
-                (lambda xx: torch.transpose(xx, dim0=-1, dim1=-2), 'x -> x'),
-                (global_add_pool, 'x, batch -> x'),
-                (layer_init(nn.Linear(action_dim, action_dim), gain=0.01), 'x -> x')
-            ]
-        )
-        self.policy_batch = torch.LongTensor([0 for _ in range(last_layer_dim)])
-        self.policy_net = gnn.Sequential('x, edge_index, batch', policy_net)
-        # -------- init value network --------
-        last_layer_dim = self.share_dim
-        value_net = []
-        for current_layer_dim in [32, 32]:
-            value_net.append(
-                (layer_init(GCNConv(last_layer_dim, current_layer_dim)), 'x, edge_index -> x')
-                )
-            value_net.append(nn.Tanh())
-            last_layer_dim = current_layer_dim
-        value_net.extend(
-            [
-                (layer_init(nn.Linear(last_layer_dim, last_layer_dim)), 'x -> x'),
-                nn.Tanh(),
-                (global_add_pool, 'x, batch -> x'),
-                (layer_init(nn.Linear(last_layer_dim, 1), gain=1.0), 'x -> x')
-            ]
-        )
-        self.value_batch = torch.LongTensor([0 for _ in range(self.num_pos)])
-        self.value_net = gnn.Sequential('x, edge_index, batch', value_net)
+# class GNet(nn.Module):
+#     def __init__(
+#         self, 
+#         state_shape, share_shape, action_dim, 
+#         action_list, 
+#         args
+#     ):
+#         super(GNet, self).__init__()
+#         self.state_dim = state_shape[1]
+#         self.action_dim = action_dim
+#         self.share_dim = share_shape[1]
+#         self.num_pos = state_shape[0]
+#         self.action_list = action_list
+#         # -------- init policy network --------
+#         last_layer_dim = self.state_dim
+#         policy_net = []
+#         for current_layer_dim in [32, 32]:
+#             policy_net.append(
+#                 (layer_init(GCNConv(last_layer_dim, current_layer_dim)), 'x, edge_index -> x')
+#                 )
+#             policy_net.append(nn.Tanh())
+#             last_layer_dim = current_layer_dim
+#         policy_net.extend(
+#             [
+#                 (layer_init(nn.Linear(last_layer_dim, last_layer_dim)), 'x -> x'),
+#                 nn.Tanh(),
+#                 (lambda xx: torch.transpose(xx, dim0=-1, dim1=-2), 'x -> x'),
+#                 (global_add_pool, 'x, batch -> x'),
+#                 (layer_init(nn.Linear(action_dim, action_dim), gain=0.01), 'x -> x')
+#             ]
+#         )
+#         self.policy_batch = torch.LongTensor([0 for _ in range(last_layer_dim)])
+#         self.policy_net = gnn.Sequential('x, edge_index, batch', policy_net)
+#         # -------- init value network --------
+#         last_layer_dim = self.share_dim
+#         value_net = []
+#         for current_layer_dim in [32, 32]:
+#             value_net.append(
+#                 (layer_init(GCNConv(last_layer_dim, current_layer_dim)), 'x, edge_index -> x')
+#                 )
+#             value_net.append(nn.Tanh())
+#             last_layer_dim = current_layer_dim
+#         value_net.extend(
+#             [
+#                 (layer_init(nn.Linear(last_layer_dim, last_layer_dim)), 'x -> x'),
+#                 nn.Tanh(),
+#                 (global_add_pool, 'x, batch -> x'),
+#                 (layer_init(nn.Linear(last_layer_dim, 1), gain=1.0), 'x -> x')
+#             ]
+#         )
+#         self.value_batch = torch.LongTensor([0 for _ in range(self.num_pos)])
+#         self.value_net = gnn.Sequential('x, edge_index, batch', value_net)
         
-    def get_value(self, x, edge_index):
-        value = self.value_net(x, edge_index, self.value_batch).squeeze(dim=-2)
-        return value
+#     def get_value(self, x, edge_index):
+#         value = self.value_net(x, edge_index, self.value_batch).squeeze(dim=-2)
+#         return value
 
-    def get_distribution(self, x, edge_index, mask):
-        log_prob = self.policy_net(x, edge_index, self.policy_batch).squeeze(dim=-2)
-        masked_logit = log_prob.masked_fill((~mask.bool()), -1e32)
-        return Categorical(logits=masked_logit)
+#     def get_distribution(self, x, edge_index, mask):
+#         log_prob = self.policy_net(x, edge_index, self.policy_batch).squeeze(dim=-2)
+#         masked_logit = log_prob.masked_fill((~mask.bool()), -1e32)
+#         return Categorical(logits=masked_logit)
 
 class Network(nn.Module):
     def __init__(
         self, 
         state_dim, share_dim, action_dim, 
-        action_list, policy_arch: List, value_arch: List,
-        args
+        action_list, policy_arch: List, value_arch: List
         ):
         super(Network, self).__init__()
         self.state_dim = state_dim
@@ -97,7 +96,11 @@ class Network(nn.Module):
             policy_net.append(layer_init(nn.Linear(last_layer_dim, current_layer_dim)))
             policy_net.append(nn.Tanh())
             last_layer_dim = current_layer_dim
-        policy_net.append(layer_init(nn.Linear(last_layer_dim, action_dim), gain=0.01))
+        # policy_net.append(layer_init(nn.Linear(last_layer_dim, action_dim), gain=0.01))
+
+        charge_net = layer_init(nn.Linear(last_layer_dim, action_dim), gain=0.01)
+        route_net = layer_init(nn.Linear(last_layer_dim, action_dim), gain=0.01)
+
         # -------- init value network --------
         last_layer_dim = share_dim
         value_net = []
@@ -115,6 +118,7 @@ class Network(nn.Module):
         return value
 
     def get_distribution(self, state):
+        # TODO: 动作合并
         if self.action_list.dim() == state.dim():
             mask = (self.action_list > state[0]+0.05).long().bool()
         else:
@@ -162,32 +166,31 @@ class PPOAgent(object):
         
         self.charge_network = Network(
             state_dim, share_dim, caction_dim, self.caction_list, 
-            args.policy_arch, args.value_arch,
-            args
+            args.policy_arch, args.value_arch
             ).to(self.device)
         self.charge_optimizer = torch.optim.Adam(self.charge_network.parameters(), lr=self.lr, eps=1e-5)
 
-        self.route_network = GNet(
-            obs_features_shape, global_features_shape, 
-            raction_dim, self.raction_list, 
-            args
-            ).to(self.device)
-        self.route_network.policy_batch = self.route_network.policy_batch.to(self.device)
-        self.route_network.value_batch = self.route_network.value_batch.to(self.device)
-        self.route_optimizer = torch.optim.Adam(self.route_network.parameters(), lr=self.lr, eps=1e-5)
+        # self.route_network = GNet(
+        #     obs_features_shape, global_features_shape, 
+        #     raction_dim, self.raction_list, 
+        #     args
+        #     ).to(self.device)
+        # self.route_network.policy_batch = self.route_network.policy_batch.to(self.device)
+        # self.route_network.value_batch = self.route_network.value_batch.to(self.device)
+        # self.route_optimizer = torch.optim.Adam(self.route_network.parameters(), lr=self.lr, eps=1e-5)
 
         self.rolloutBuffer = buffer
 
-    def select_caction(self, state):
+    def select_action(self, state):
         # state = torch.unsqueeze(torch.tensor(state, dtype=torch.float32), 0).to(self.device)
-        state = torch.tensor(state, dtype=torch.float32).to(self.device)
-        with torch.no_grad():
-            dist = self.charge_network.get_distribution(state)
-            action = dist.sample()
-            log_prob = dist.log_prob(action)
-        return action.cpu().numpy().flatten(), log_prob.cpu().numpy().flatten()
+        # state = torch.tensor(state, dtype=torch.float32).to(self.device)
+        # with torch.no_grad():
+        #     dist = self.charge_network.get_distribution(state)
+        #     action = dist.sample()
+        #     log_prob = dist.log_prob(action)
+        # return action.cpu().numpy().flatten(), log_prob.cpu().numpy().flatten()
 
-    def select_best_caction(self, state):
+    def select_best_action(self, state):
         state = torch.unsqueeze(torch.tensor(state, dtype=torch.float32), 0).to(self.device)
         with torch.no_grad():
             dist = self.charge_network.get_distribution(state)
@@ -195,25 +198,25 @@ class PPOAgent(object):
             log_prob = dist.log_prob(action)
         return action.cpu().numpy().flatten(), log_prob.cpu().numpy().flatten()
     
-    def select_raction(self, obs_feature, mask):
-        # state = torch.unsqueeze(torch.tensor(state, dtype=torch.float32), 0).to(self.device)
-        obs_feature = torch.tensor(obs_feature, dtype=torch.float32).to(self.device)
-        mask = torch.LongTensor(mask).to(self.device)
+    # def select_raction(self, obs_feature, mask):
+    #     # state = torch.unsqueeze(torch.tensor(state, dtype=torch.float32), 0).to(self.device)
+    #     obs_feature = torch.tensor(obs_feature, dtype=torch.float32).to(self.device)
+    #     mask = torch.LongTensor(mask).to(self.device)
         
-        with torch.no_grad():
-            dist = self.route_network.get_distribution(x=obs_feature, edge_index=self.edge_index, mask=mask)
-            action = dist.sample()
-            log_prob = dist.log_prob(action)
-        return action.cpu().numpy().flatten(), log_prob.cpu().numpy().flatten()
+    #     with torch.no_grad():
+    #         dist = self.route_network.get_distribution(x=obs_feature, edge_index=self.edge_index, mask=mask)
+    #         action = dist.sample()
+    #         log_prob = dist.log_prob(action)
+    #     return action.cpu().numpy().flatten(), log_prob.cpu().numpy().flatten()
 
-    def select_best_raction(self, obs_feature, mask):
-        obs_feature = torch.tensor(obs_feature, dtype=torch.float32).to(self.device)
-        mask = torch.LongTensor(mask).to(self.device)
-        with torch.no_grad():
-            dist = self.route_network.get_distribution(x=obs_feature, edge_index=self.edge_index, mask=mask)
-            action = dist.probs.argmax() # type: ignore
-            log_prob = dist.log_prob(action)
-        return action.cpu().numpy().flatten(), log_prob.cpu().numpy().flatten()
+    # def select_best_raction(self, obs_feature, mask):
+    #     obs_feature = torch.tensor(obs_feature, dtype=torch.float32).to(self.device)
+    #     mask = torch.LongTensor(mask).to(self.device)
+    #     with torch.no_grad():
+    #         dist = self.route_network.get_distribution(x=obs_feature, edge_index=self.edge_index, mask=mask)
+    #         action = dist.probs.argmax() # type: ignore
+    #         log_prob = dist.log_prob(action)
+    #     return action.cpu().numpy().flatten(), log_prob.cpu().numpy().flatten()
     
     def train(self):
         if self.ps:

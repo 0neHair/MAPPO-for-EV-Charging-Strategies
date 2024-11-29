@@ -161,25 +161,24 @@ class Multi_EV_Env(gym.Env):
     def step(self, action_n: tuple):
         caction_n = action_n[0]
         raction_n = action_n[1]
-        activate_agent_ci = [] # 记录即将充电的智能体id
-        activate_to_cact = [] # 处于关键点的智能体是否可以做选择，到达终点的不能
-        activate_agent_ri = [] # 记录正处于关键点的智能体id
-        activate_to_ract = [] # 处于关键点的智能体是否可以做选择，到达终点的不能
+        activate_agent_i = [] # 记录即将充电的智能体id
+        activate_to_act = [] # 处于关键点的智能体是否可以做选择，到达终点的不能
         
         # 第一阶段：设置好智能体动作
         # print('第一阶段：设置好智能体动作')
         run_step = True
         for i, agent in enumerate(self.agents):
-            if agent.is_routing:
-                self.set_n_raction(agent, raction_n[i]) # 设置动作
+            # if agent.is_routing:
+            #     self.set_n_raction(agent, raction_n[i]) # 设置动作
             if agent.is_choosing:
                 self.set_n_caction(agent, caction_n[i]) # 设置动作
-                if caction_n[i] == 0:
-                    agent.if_choose_route()
-                    if agent.is_routing != 0:
-                        run_step = False
-                        activate_agent_ri.append(agent.id)
-                        activate_to_ract.append(agent.is_routing)
+                self.set_n_raction(agent, raction_n[i]) # 设置动作
+                # if caction_n[i] == 0:
+                #     agent.if_choose_route()
+                #     if agent.is_routing != 0:
+                #         run_step = False
+                #         activate_agent_i.append(agent.id)
+                #         activate_to_act.append(agent.is_routing)
     
         # 第二阶段：让环境运行至有智能体到达检查地点
         # print('第二阶段：让环境运行至有智能体到达检查地点')
@@ -192,21 +191,18 @@ class Multi_EV_Env(gym.Env):
             
                 if round(self.total_time, 2) >= agent.enter_time and not agent.is_active: # 到达EV进入时间，则启动
                     agent.activate()
-                if agent.is_routing: # 如果在分叉点，记录并跳出
-                    run_step = False
-                    activate_agent_ri.append(agent.id)
-                    activate_to_ract.append(agent.is_routing)
-
+                # if agent.is_routing: # 如果在分叉点，记录并跳出
+                #     run_step = False
+                #     activate_agent_ri.append(agent.id)
+                #     activate_to_ract.append(agent.is_routing)
                 if agent.is_choosing: # 如果在CS，记录并跳出
                     run_step = False
-                    activate_agent_ci.append(agent.id)
-                    activate_to_cact.append(True)
+                    activate_agent_i.append(agent.id)
+                    activate_to_act.append(True)
                 if agent.stop_update: # 如果在终点，记录并跳出
                     run_step = False
-                    activate_agent_ri.append(agent.id)
-                    activate_to_ract.append(0)
-                    activate_agent_ci.append(agent.id)
-                    activate_to_cact.append(False)
+                    activate_agent_i.append(agent.id)
+                    activate_to_act.append(False)
                     agent_to_remove.append(agent)
             self.update_cs_info(step=True)
             self.cs_save_memory()
@@ -217,44 +213,40 @@ class Multi_EV_Env(gym.Env):
         # 当智能体到达检查点后，其上一次状态选择的动作有了结果，因此输出上一次的动作和这一次的状态  
         # print('第三阶段：整理奖励和输出')
         obs_n = []
-        obs_feature_n = []
         obs_mask_n = []
         cact_n = []
         ract_n = []
-        creward_n = []
-        rreward_n = []
+        reward_n = []
         done_n = []
         for i, agent in enumerate(self.agents):
             
-            obs, sub_cs_feature, choice_set_mask = self.get_obs(agent)
+            obs, choice_set_mask = self.get_obs(agent)
             obs_n.append(obs)
-            obs_feature_n.append(sub_cs_feature)
             obs_mask_n.append(choice_set_mask)
             
             cact_n.append(self.get_act(agent, c=True))
             ract_n.append(self.get_act(agent, c=False))
             
-            if i in activate_agent_ci:
-                if activate_to_cact[activate_agent_ci.index(i)] == False:
-                    creward_n.append(self.get_reward(agent, c=True, isfinal=True))
-                else:
-                    creward_n.append(self.get_reward(agent, c=True, isfinal=False))
-            else:
-                creward_n.append(self.get_reward(agent, c=True, isfinal=False))
+            # if i in activate_agent_i:
+            #     if activate_to_act[activate_agent_i.index(i)] == False:
+            #         creward_n.append(self.get_reward(agent, c=True, isfinal=True))
+            #     else:
+            #         creward_n.append(self.get_reward(agent, c=True, isfinal=False))
+            # else:
+            #     creward_n.append(self.get_reward(agent, c=True, isfinal=False))
             
-            rreward_n.append(self.get_reward(agent, c=False))
+            reward_n.append(self.get_reward(agent))
             done_n.append(self.get_done(agent))
             # info = {'individual_reward': self.get_reward(agent)}
             # env_info = self._get_info(agent)
             # if 'fail' in env_info.keys():
             #     info['fail'] = env_info['fail']
             # info_n.append(info)
-        share_obs, global_cs_feature = self.get_share_state()
+        share_obs = self.get_share_state()
         
-        return obs_n, obs_feature_n, obs_mask_n, \
-            share_obs, global_cs_feature, \
-                done_n, creward_n, rreward_n, cact_n, ract_n, \
-                    activate_agent_ci, activate_to_cact, activate_agent_ri, activate_to_ract
+        return obs_n, obs_mask_n, share_obs, \
+                done_n, reward_n, cact_n, ract_n, \
+                    activate_agent_i, activate_to_act
 
     def update_cs_info(self, step=False):
         # 充电站时间更新
@@ -336,7 +328,9 @@ class Multi_EV_Env(gym.Env):
             
         onehot_pos = [0 for _ in range(self.num_cs)]
         onehot_pos[agent_tpos] = 1
-        cobs = [agent_SOC, agent_exp_SOC, agent_usingtime, agent_charging_ts, agent_next_waiting, agent_complete_trip] + onehot_pos
+        cobs = [
+            agent_SOC, agent_exp_SOC, agent_usingtime, agent_charging_ts, agent_next_waiting, agent_complete_trip
+            ] + onehot_pos
         
         # 计算当前能够到达的CS，进而获得还能去的CS的子图
         # reachable_cs = self.map_rea_index[agent_tpos]
@@ -345,7 +339,7 @@ class Multi_EV_Env(gym.Env):
         # sub_map_adj = np.zeros_like(self.map_adj)
         # sub_map_adj[reachable_cs] = self.map_adj[reachable_cs]
         
-        sub_cs_feature = np.array([self.cs_waiting_time, onehot_pos]).T
+        # sub_cs_feature = np.array([self.cs_waiting_time, onehot_pos]).T
         # sub_edge_index = adj2eindex(sub_map_adj, map_shape=self.map_shape)
         choice_set_mask = agent.get_choice_set_mask()
         
@@ -354,7 +348,7 @@ class Multi_EV_Env(gym.Env):
             one_hot[agent.id] = 1
             cobs =  cobs + one_hot
         
-        return np.array(cobs), sub_cs_feature, choice_set_mask
+        return np.array(cobs), choice_set_mask
     
     def get_act(self, agent: EV_Agent, c: bool):
         # 智能体上一个动作
@@ -367,14 +361,14 @@ class Multi_EV_Env(gym.Env):
             agent_last_action = agent_act_memory[-1]
         return np.array([agent_last_action])
     
-    def get_reward(self, agent: EV_Agent, c: bool, isfinal: bool = False):
+    def get_reward(self, agent: EV_Agent):
         # 智能体当前奖励
-        if c:
-            agent_reward = agent.c_reward
-            if isfinal:
-                agent_reward += agent.get_penalty()
-        else:
-            agent_reward = agent.r_reward
+        # if c:
+        #     agent_reward = agent.c_reward
+        #     if isfinal:
+        #         agent_reward += agent.get_penalty()
+        # else:
+        agent_reward = agent.r_reward
         return np.array([agent_reward])
         
     def get_done(self, agent: EV_Agent):
@@ -411,7 +405,7 @@ class Multi_EV_Env(gym.Env):
     
     def get_share_state(self):
         share_state = []
-        onehot_pos = np.zeros([self.num_cs, self.agent_num])
+        # onehot_pos = np.zeros([self.num_cs, self.agent_num])
         for i, agent in enumerate(self.agents):
             pos = agent.target_pos
             share_state.append(agent.SOC)
@@ -422,14 +416,10 @@ class Multi_EV_Env(gym.Env):
             onehot_pos_ = [0 for _ in range(self.num_cs)]
             onehot_pos_[pos] = 1
             share_state.extend(onehot_pos_.copy())
-            onehot_pos[pos][i] = 1
+            # onehot_pos[pos][i] = 1
         share_state = np.array(share_state.copy())
         share_state = np.concatenate([share_state, self.cs_waiting_time])
-        
-        cs_feature = np.array(self.cs_charger_waiting_time)
-        cs_feature = np.concatenate([cs_feature, onehot_pos], axis=1)
-        
-        return share_state, cs_feature
+        return share_state
 
     def render(self):
         print('Time: {} h'.format(round(self.total_time, 2)))
