@@ -49,7 +49,7 @@ def Evaluate(env, agents, args, mode, agent_num):
                         #     env_id=e, agent_id=agent_i
                         #     )
                     else:
-                        caction, clog_prob = agents[agent_i].select_caction(obs_n[agent_i])
+                        caction, clog_prob = agents[agent_i].select_best_caction(obs_n[agent_i])
                     caction_n[agent_i] = caction[0].copy()
         # 决策路径
         for i, agent_i in enumerate(activate_agent_ri):
@@ -75,7 +75,7 @@ def Evaluate(env, agents, args, mode, agent_num):
                         #     env_id=e, agent_id=agent_i
                         #     )
                     else:
-                        raction, rlog_prob = agents[agent_i].select_raction(
+                        raction, rlog_prob = agents[agent_i].select_best_raction(
                             obs_feature_n[agent_i], obs_mask_n[agent_i]
                         )
                     raction_n[agent_i] = raction[0].copy()
