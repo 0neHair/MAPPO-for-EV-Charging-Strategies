@@ -26,7 +26,7 @@ def Train(envs, agents, writer, args, mode, agent_num):
     run_times = [0 for _ in range(args.num_env)] # 每个环境的运行次数
 
     for i_episode in range(1, args.num_update + 1):
-        #^ 学习率递减
+        # 学习率递减
         if args.ps:
             lr = agents[0].lr_decay(i_episode)
         else:
@@ -34,7 +34,7 @@ def Train(envs, agents, writer, args, mode, agent_num):
                 lr = agent.lr_decay(i_episode)
         # expert_percent = 1 - current_step / args.demo_step
         writer.add_scalar("Global/lr", lr, i_episode-1)
-        #* 环境初始化
+        ########### 环境初始化 ###########
         agents_total_reward = np.array([[0.0 for _ in range(agent_num)] for __ in range(args.num_env)])
         envs.reset()
         obs_n, obs_feature_n, obs_mask_n, \
@@ -43,6 +43,9 @@ def Train(envs, agents, writer, args, mode, agent_num):
                     activate_agent_ci, activate_to_cact, \
                         activate_agent_ri, activate_to_ract \
                             = envs.step(default_action)
+        for e in range(args.num_env):
+            for i, agent_i in enumerate(activate_agent_ri[e]):
+                agents_total_reward[e][agent_i] += rreward_n[e][agent_i][0].copy()
         active_to_cpush = [[False for _ in range(agent_num)] for __ in range(args.num_env)]
         active_to_rpush = [[False for _ in range(agent_num)] for __ in range(args.num_env)]
         buffer_times = np.array([[0.0 for _ in range(agent_num)] for __ in range(args.num_env)])
@@ -177,8 +180,8 @@ def Train(envs, agents, writer, args, mode, agent_num):
                                 )
                 for i, agent_i in enumerate(activate_agent_ri[e]):
                     # print("RR:", rreward_n)
-                    agents_total_reward[e][agent_i] += rreward_n[e][agent_i][0].copy()
                     if active_to_rpush[e][agent_i]:
+                        agents_total_reward[e][agent_i] += rreward_n[e][agent_i][0].copy()
                         if args.ps:
                             pass
                             # if not args.ctde:
@@ -213,12 +216,14 @@ def Train(envs, agents, writer, args, mode, agent_num):
             if is_finished != []:
                 # current_policy = env.get_policy().copy()
                 # print(agents_total_reward)
+                # 环境重启
                 obs_n_, obs_feature_n_, obs_mask_n_, \
                     share_obs_, global_cs_feature_, \
                         done_n_, creward_n_, rreward_n_, cact_n_, ract_n_, \
                             activate_agent_ci_, activate_to_cact_, \
                                 activate_agent_ri_, activate_to_ract_ \
                                     = envs.reset_process(is_finished)
+                # 奖励整理
                 for i, e in enumerate(is_finished):
                     # 计算该环境总奖励
                     total_reward = 0 
@@ -240,7 +245,7 @@ def Train(envs, agents, writer, args, mode, agent_num):
                     run_times[e] += 1
                     global_total_reward = total_reward
                     
-                    # 重启环境
+                    # 变量重启
                     obs_n[e] = obs_n_[i]
                     share_obs[e] = share_obs_[i]
                     creward_n[e] = creward_n_[i]
@@ -257,11 +262,18 @@ def Train(envs, agents, writer, args, mode, agent_num):
                     done_n[e] = done_n_[i]
                     active_to_cpush[e] = [False for _ in range(agent_num)]
                     active_to_rpush[e] = [False for _ in range(agent_num)]
+                    for e in range(args.num_env):
+                        for i, agent_i in enumerate(activate_agent_ri[e]):
+                            agents_total_reward[e][agent_i] += rreward_n[e][agent_i][0].copy()
                 # avg_length += 1
         # print(i_episode, i_episode)
         if i_episode % log_interval == 0:
-            print('Episode {} \t Total reward: {:.3f} \t Total best reward: {:.3f}'.format(i_episode, global_total_reward, total_best_reward))
-        
+            print(
+                    'Episode {} \t Total reward: {:.3f} \t Average reward: {:.3f} \t Total best reward: {:.3f} \t Average best reward: {:.3f}'.format(
+                            i_episode, global_total_reward, global_total_reward/agent_num, total_best_reward, total_best_reward/agent_num
+                        )
+                )
+            
         # 更新网络
         total_actor_closs = 0
         total_critic_closs = 0
