@@ -15,82 +15,38 @@ def Evaluate(env, agents, args, mode, agent_num):
         
     agents_total_reward = [0 for _ in range(agent_num)]
     env.reset()
-    obs_n, obs_feature_n, obs_mask_n, \
-        share_obs, global_cs_feature, \
-            done_n, creward_n, rreward_n, cact_n, ract_n, \
-                activate_agent_ci, activate_to_cact, \
-                    activate_agent_ri, activate_to_ract \
-                        = env.step(default_action)
+    obs_n, obs_mask_n, share_obs, done_n, \
+        reward_n, cact_n, ract_n, \
+            activate_agent_i, activate_to_act \
+                    = env.step(default_action)
+    for i, agent_i in enumerate(activate_agent_i):
+        agents_total_reward[agent_i] += reward_n[agent_i][0].copy()
     while 1:
         caction_n = np.array([-1 for _ in range(agent_num)])
         raction_n = np.array([-1 for _ in range(agent_num)])
-        
-        # 决策充电
-        for i, agent_i in enumerate(activate_agent_ci):
-            if activate_to_cact[i]:
+
+        for i, agent_i in enumerate(activate_agent_i):
+            if activate_to_act[i]:
                 with torch.no_grad():
                     # Choose an action
                     if args.ps:
                         pass
-                        # action, log_prob = agents[0].select_caction(obs_n[e][agent_i])
-                        # if not args.ctde:
-                        #     share_obs_ = obs_n[e][agent_i].copy()
-                        # else:
-                        #     share_obs_ = share_obs[e].copy()
-                        #     # one_hot = [0] * agent_num
-                        #     # one_hot[agent_i] = 1
-                        #     # share_obs_ =  np.concatenate([share_obs_, np.array(one_hot)])
-                        # # Push
-                        # agents[0].rolloutBuffer.push_last_state(
-                        #     state=obs_n[e][agent_i], 
-                        #     share_state=share_obs_, 
-                        #     action=action, 
-                        #     log_prob=log_prob,
-                        #     env_id=e, agent_id=agent_i
-                        #     )
                     else:
-                        caction, clog_prob = agents[agent_i].select_caction(obs_n[agent_i])
+                        caction, raction, log_prob = agents[agent_i].select_best_action(
+                                obs_n[agent_i],
+                                obs_mask_n[agent_i]
+                            )
                     caction_n[agent_i] = caction[0].copy()
-        # 决策路径
-        for i, agent_i in enumerate(activate_agent_ri):
-            if activate_to_ract[i]:
-                with torch.no_grad():
-                    # Choose an action
-                    if args.ps:
-                        pass
-                        # action, log_prob = agents[0].select_raction(obs_n[e][agent_i])
-                        # if not args.ctde:
-                        #     share_obs_ = obs_n[e][agent_i].copy()
-                        # else:
-                        #     share_obs_ = share_obs[e].copy()
-                        #     # one_hot = [0] * agent_num
-                        #     # one_hot[agent_i] = 1
-                        #     # share_obs_ =  np.concatenate([share_obs_, np.array(one_hot)])
-                        # # Push
-                        # agents[0].rolloutBuffer.push_last_state(
-                        #     state=obs_n[e][agent_i], 
-                        #     share_state=share_obs_, 
-                        #     action=action, 
-                        #     log_prob=log_prob,
-                        #     env_id=e, agent_id=agent_i
-                        #     )
-                    else:
-                        raction, rlog_prob = agents[agent_i].select_raction(
-                            obs_feature_n[agent_i], obs_mask_n[agent_i]
-                        )
                     raction_n[agent_i] = raction[0].copy()
-        
-        obs_n, obs_feature_n, obs_mask_n, \
-            share_obs, global_cs_feature, \
-                done_n, creward_n, rreward_n, cact_n, ract_n, \
-                    activate_agent_ci, activate_to_cact, \
-                        activate_agent_ri, activate_to_ract \
-                            = env.step((caction_n, raction_n)) # (caction_n, raction_n)
+
+        obs_n, obs_mask_n, share_obs, done_n, \
+            reward_n, cact_n, ract_n, \
+                activate_agent_i, activate_to_act \
+                    = env.step((caction_n, raction_n)) # (caction_n, raction_n)
         
         #* 将被激活的智能体当前状态作为上一次动作的结果保存
-        for i, agent_i in enumerate(activate_agent_ri):
-            # print("RR:", rreward_n)
-            agents_total_reward[agent_i] += rreward_n[agent_i][0].copy()
+        for i, agent_i in enumerate(activate_agent_i):
+            agents_total_reward[agent_i] += reward_n[agent_i][0].copy()
 
         if env.agents_active == []: 
             break
@@ -170,8 +126,13 @@ def Evaluate(env, agents, args, mode, agent_num):
         df_ev_g.loc[j, 'Total'] = ev.total_used_time
         df_ev_g.loc[j, 'Reward'] = ev.total_reward
     df_ev_g.to_csv(dir+'/EV_g.csv', index=False)
-        
-    print(total_reward)
+
+    print(
+            'Total reward: {:.3f} \t Average reward: {:.3f}'.format(
+                    total_reward, total_reward/agent_num
+                )
+        )
+    # print(total_reward)
     # env.render()
     env.close()
 

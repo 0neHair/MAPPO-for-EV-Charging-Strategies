@@ -21,6 +21,8 @@ def Evaluate(env, agents, args, mode, agent_num):
                 activate_agent_ci, activate_to_cact, \
                     activate_agent_ri, activate_to_ract \
                         = env.step(default_action)
+    for i, agent_i in enumerate(activate_agent_ri):
+        agents_total_reward[agent_i] += rreward_n[agent_i][0].copy()
     while 1:
         caction_n = np.array([-1 for _ in range(agent_num)])
         raction_n = np.array([-1 for _ in range(agent_num)])
@@ -91,7 +93,6 @@ def Evaluate(env, agents, args, mode, agent_num):
         for i, agent_i in enumerate(activate_agent_ri):
             # print("RR:", rreward_n)
             agents_total_reward[agent_i] += rreward_n[agent_i][0].copy()
-
         if env.agents_active == []: 
             break
         
@@ -170,7 +171,12 @@ def Evaluate(env, agents, args, mode, agent_num):
         df_ev_g.loc[j, 'Total'] = ev.total_used_time
         df_ev_g.loc[j, 'Reward'] = ev.total_reward
     df_ev_g.to_csv(dir+'/EV_g.csv', index=False)
-        
+    
+    print(
+            'Total reward: {:.3f} \t Average reward: {:.3f}'.format(
+                    total_reward, total_reward/agent_num
+                )
+        )
     print(total_reward)
     # env.render()
     env.close()
