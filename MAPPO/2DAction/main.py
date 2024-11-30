@@ -23,8 +23,8 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sce_name", type=str, default="HY")
-    parser.add_argument("--filename", type=str, default="T1")
+    parser.add_argument("--sce_name", type=str, default="test_2")
+    parser.add_argument("--filename", type=str, default="T2")
     parser.add_argument("--train", type=bool, default=True)
 
     parser.add_argument("--ctde", type=bool, default=True)
@@ -125,27 +125,6 @@ def main():
     mappo = []
     if args.ps:
         pass
-        # from ppo import PPOAgent
-        # from ppo_ps import PPOPSAgent
-        # from buffer import SharedRolloutBuffer
-        
-        # buffer = SharedRolloutBuffer(
-        #         steps=args.single_batch_size, num_env=args.num_env,
-        #         state_shape=state_shape, share_shape=share_shape, action_shape=(1, ), # type: ignore
-        #         agent_num=agent_num,
-        #         device=device
-        #         )
-        # ppo = PPOPSAgent(
-        #     state_dim=state_dim, share_dim=share_dim, action_dim=action_dim, 
-        #     action_list=action_list,
-        #     buffer=buffer, device=device, agent_num=agent_num,
-        #     args=args
-        #     )
-        # path = "save/{}_{}".format(args.sce_name, args.filename)
-        # if not os.path.exists(path):
-        #     os.makedirs(path)
-        # # ppo.load("save/{}_{}/agent_{}".format(args.sce_name, args.filename, mode))
-        # mappo.append(ppo)
     else:
         from ppo import PPOAgent
         from buffer import RolloutBuffer

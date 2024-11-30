@@ -272,7 +272,7 @@ class EV_Agent():
             reward -= (waiting_time*self.waiting_time_beta + charging_time*self.charging_time_beta + self.fixed_charging_wasting_time)
             
         self.c_reward = reward
-        self.r_reward += reward
+        self.r_reward = reward
         self.total_reward += reward
 
     def set_raction(self, raction=0, reset_record=False):
@@ -323,9 +323,9 @@ class EV_Agent():
                     reward -= self.unexpected_penalty
         # 更新奖励
         if reset_record: # 如果是决策点，重设奖励
-            self.r_reward = reward
-        else: # 否则累加
             self.r_reward += reward
+        else: # 否则累加
+            self.r_reward = reward
         self.total_reward += reward
     
     def get_choice_set(self):
