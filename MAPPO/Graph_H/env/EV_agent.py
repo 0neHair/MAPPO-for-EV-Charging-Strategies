@@ -264,7 +264,7 @@ class EV_Agent():
             
             # if self.charging_ts > self.ideal_times + 1:
             #     reward -= self.multi_times_penalty
-        
+            assert self.caction_list[caction] > self.SOC, "SOC > target_SOC"
             self.SOC = self.caction_list[caction] # 充电更新
             reward -= (waiting_time*self.waiting_time_beta + charging_time*self.charging_time_beta + self.fixed_charging_wasting_time)
             

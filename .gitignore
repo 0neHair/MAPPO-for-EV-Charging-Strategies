@@ -1,0 +1,9 @@
+MAPPO/2DAction/__pycache__
+MAPPO/2DAction/logs/*
+MAPPO/Graph_H/__pycache__
+MAPPO/Graph_H/logs/*
+MAPPO/Origin/__pycache__
+MAPPO/Origin/logs/*
+MAPPO/PS/__pycache__
+MAPPO/PS/logs/*
+GA/__pycache__

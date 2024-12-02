@@ -1,31 +1,40 @@
 '''
 Author: CQZ
-Date: 2024-11-30 21:29:03
+Date: 2024-12-02 19:30:59
 Company: SEU
 '''
-import numpy as np
-
-
-def schaffer(p):
-    '''
-    This function has plenty of local minimum, with strong shocks
-    global minimum at (0,0) with value 0
-    '''
-    x1, x2 = p
-    x = np.square(x1) + np.square(x2)
-    return 0.5 + (np.square(np.sin(x)) - 0.5) / np.square(1 + 0.001 * x)
-
 from sko.GA import GA
+import numpy as np
+from tqdm import tqdm
 
-ga = GA(func=schaffer, n_dim=2, size_pop=50, max_iter=800, prob_mut=0.001, lb=[-1, -1], ub=[1, 1], precision=1e-7)
-best_x, best_y = ga.run()
-print('best_x:', best_x, '\n', 'best_y:', best_y)
+class GA_tqdm(GA):
+    def run(self, max_iter=None):
+        self.max_iter = max_iter or self.max_iter
+        best = []
+        for i in tqdm(range(self.max_iter)):
+            self.X = self.chrom2x(self.Chrom)
+            self.Y = self.x2y()
+            self.ranking()
+            self.selection()
+            self.crossover()
+            self.mutation()
 
-import pandas as pd
-import matplotlib.pyplot as plt
+            # record the best ones
+            generation_best_index = self.FitV.argmax() # type: ignore
+            self.generation_best_X.append(self.X[generation_best_index, :])
+            self.generation_best_Y.append(self.Y[generation_best_index])
+            self.all_history_Y.append(self.Y)
+            self.all_history_FitV.append(self.FitV)
 
-Y_history = pd.DataFrame(ga.all_history_Y)
-fig, ax = plt.subplots(2, 1)
-ax[0].plot(Y_history.index, Y_history.values, '.', color='red')
-Y_history.min(axis=1).cummin().plot(kind='line')
-plt.show()
+            if self.early_stop:
+                best.append(min(self.generation_best_Y))
+                if len(best) >= self.early_stop:
+                    if best.count(min(best)) == len(best):
+                        break
+                    else:
+                        best.pop(0)
+
+        global_best_index = np.array(self.generation_best_Y).argmin()
+        self.best_x = self.generation_best_X[global_best_index]
+        self.best_y = self.func(np.array([self.best_x]))
+        return self.best_x, self.best_y
