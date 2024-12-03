@@ -59,7 +59,7 @@ class Scenario(): # Sioux-Falls transportation system
         total_vehicle_num = 30
         active_time_list = np.sort(np.round(np.random.uniform(0, 1, (total_vehicle_num)), 2))
         for i in range(0, len(active_time_list)):
-            SOC_init = 0.2
+            SOC_init = 0.5
             SOC_exp = 0.5
             agent = EV_Agent(
                 id=i, frame=self.frame, 
