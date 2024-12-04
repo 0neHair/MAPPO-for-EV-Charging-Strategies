@@ -4,6 +4,7 @@ Date: 2024-12-02 15:38:02
 Company: SEU
 '''
 import numpy as np
+from env.EV_Sce_Env import EV_Sce_Env
 
 def x2action_seq(edge_used, point_used, ve_matrix, map_adj):
     ract_seq = []
@@ -78,15 +79,34 @@ def run(caction_seq, raction_seq, env, agent_num):
         total_reward += agents_total_reward[i]
     return total_reward
 
-# if __name__ == "__main__":
-#     env = EV_Sce_Env(sce_name=args.sce_name, seed=args.seed, ps=False)
-#     ve_matrix = np.zeros((env.map_adj.shape[1], env.edge_index.shape[1]))
-#     for e in range(env.edge_index.shape[1]):
-#         ve_matrix[env.edge_index[0][e], e] = -1
-#         ve_matrix[env.edge_index[1][e], e] = 1
-#     caction_list = env.caction_list # 可选充电动作列表
-#     cact_dim = ve_matrix.shape[0]
-#     cat_max = len(caction_list)
-#     ract_dim = ve_matrix.shape[1]
-#     agent_num = env.agent_num # 智能体数量
-#     num_cs = env.num_cs # 充电站数量
+if __name__ == "__main__":
+    env = EV_Sce_Env(sce_name="test_2", seed=0, ps=False)
+    ve_matrix = np.zeros((env.map_adj.shape[1], env.edge_index.shape[1]))
+    for e in range(env.edge_index.shape[1]):
+        ve_matrix[env.edge_index[0][e], e] = -1
+        ve_matrix[env.edge_index[1][e], e] = 1
+    caction_list = env.caction_list # 可选充电动作列表
+    cact_dim = ve_matrix.shape[0]
+    cat_max = len(caction_list)
+    ract_dim = ve_matrix.shape[1]
+    agent_num = env.agent_num # 智能体数量
+    num_cs = env.num_cs # 充电站数量
+    
+    # v_charge = [[0, 0, 5, 0, 0]] * agent_num 在每个点上的动作编号，整数
+    # edge_seq = [[1, 1, 0, 0, 1, 0]] * agent_num 选择哪些路段，满足约束的话可以串起来形成路径，但生成解生成不出来
+    # section_p = [[点个数] * 点个数] * agent_num 每个点选择下一个点的概率，可以mask
+    caction_seq = [[0, 13], [0, 13]]
+    raction_seq = [[2, 4], [2, 4]]
+    
+    ract_pi_seq = [
+        [
+            [0, 1, 0, 0, 0],
+            [0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0]
+        ]
+    ]
+    
+    total_reward = run(caction_seq, raction_seq, env, agent_num)
+    print(total_reward)

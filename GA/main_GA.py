@@ -16,7 +16,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--sce_name", type=str, default="test_2")
     parser.add_argument("--filename", type=str, default="T1")
-    parser.add_argument("--train", type=bool, default=True)
+    parser.add_argument("--train", type=bool, default=False)
     parser.add_argument("--randomize", type=bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
     
@@ -106,8 +106,9 @@ constraint = [route_cons]
 # point_used: 在每个节点的充电动作选择
 # edge_used: 要用的路段编号
 
-# edge_seq = [[1, 1, 0, 0, 1, 0]] * agent_num
-# v_charge = [[0, 0, 5, 0, 0]] * agent_num
+# v_charge = [[0, 0, 5, 0, 0]] * agent_num 在每个点上的动作编号，整数
+# edge_seq = [[1, 1, 0, 0, 1, 0]] * agent_num 选择哪些路段，满足约束的话可以串起来形成路径，但生成解生成不出来
+# section_p = [[点个数] * 点个数] * agent_num 每个点选择下一个点的概率，可以mask
 
 if args.train:
     n_dim = cact_dim*agent_num+ract_dim*agent_num
@@ -120,7 +121,7 @@ if args.train:
             max_iter=args.max_iter, # 迭代次数
             prob_mut=args.prob_mut, # 变异系数
             precision=1, # 精度，1则为整数
-            constraint_eq=constraint
+            constraint_ueq=constraint
         )
 
     best_x, best_y = ga.run()

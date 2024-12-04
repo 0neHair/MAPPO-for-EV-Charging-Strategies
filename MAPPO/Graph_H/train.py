@@ -300,12 +300,12 @@ def Train(envs, agents, writer, args, mode, agent_num):
                 total_actor_rloss += actor_rloss
                 total_critic_rloss += critic_rloss
                 total_entropy_rloss += entropy_rloss
-                writer.add_scalar("Loss/agent_{}_actor_closs".format(i), actor_closs, i_episode)
-                writer.add_scalar("Loss/agent_{}_critic_closs".format(i), critic_closs, i_episode)
-                writer.add_scalar("Loss/agent_{}_entropy_closs".format(i), entropy_closs, i_episode)
-                writer.add_scalar("Loss/agent_{}_actor_rloss".format(i), actor_rloss, i_episode)
-                writer.add_scalar("Loss/agent_{}_critic_rloss".format(i), critic_rloss, i_episode)
-                writer.add_scalar("Loss/agent_{}_entropy_rloss".format(i), entropy_rloss, i_episode)
+                # writer.add_scalar("Loss/agent_{}_actor_closs".format(i), actor_closs, i_episode)
+                # writer.add_scalar("Loss/agent_{}_critic_closs".format(i), critic_closs, i_episode)
+                # writer.add_scalar("Loss/agent_{}_entropy_closs".format(i), entropy_closs, i_episode)
+                # writer.add_scalar("Loss/agent_{}_actor_rloss".format(i), actor_rloss, i_episode)
+                # writer.add_scalar("Loss/agent_{}_critic_rloss".format(i), critic_rloss, i_episode)
+                # writer.add_scalar("Loss/agent_{}_entropy_rloss".format(i), entropy_rloss, i_episode)
                 if i_episode % args.save_freq == 0:
                     agent.save("save/{}_{}/agent_{}_{}".format(args.sce_name, args.filename, i, mode))
                 
