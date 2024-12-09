@@ -33,7 +33,7 @@ class GA_tqdm(GA):
                         break
                     else:
                         best.pop(0)
-
+            
         global_best_index = np.array(self.generation_best_Y).argmin()
         self.best_x = self.generation_best_X[global_best_index]
         self.best_y = self.func(np.array([self.best_x]))

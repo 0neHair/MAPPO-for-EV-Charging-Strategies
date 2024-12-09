@@ -5,24 +5,26 @@ Company: SEU
 '''
 import numpy as np
 from env.EV_Sce_Env import EV_Sce_Env
+import torch
+from torch.distributions import Categorical
 
 def x2action_seq(edge_used, point_used, ve_matrix, map_adj):
     ract_seq = []
     cact_seq = []
     
-    current_point = 0
-    final_point = map_adj.shape[1]-1
-    while current_point != final_point:
-        current_e = None
-        for e in range(ve_matrix.shape[1]):
-            if ve_matrix[current_point][e] == -1 and edge_used[e] == 1:
-                current_e = e
-        for v in range(ve_matrix.shape[0]):
-            if ve_matrix[v][current_e] == 1:
-                current_point = v
-        ract_seq.append(current_point)
-    if map_adj[0].sum() != 1:
-        ract_seq.insert(0, 0)
+    # current_point = 0
+    # final_point = map_adj.shape[1]-1
+    # while current_point != final_point:
+    #     current_e = None
+    #     for e in range(ve_matrix.shape[1]):
+    #         if ve_matrix[current_point][e] == -1 and edge_used[e] == 1:
+    #             current_e = e
+    #     for v in range(ve_matrix.shape[0]):
+    #         if ve_matrix[v][current_e] == 1:
+    #             current_point = v
+    #     ract_seq.append(current_point)
+    # if map_adj[0].sum() != 1:
+    #     ract_seq.insert(0, 0)
     
     for a in ract_seq:
         cact_seq.append(point_used[a])
@@ -31,16 +33,35 @@ def x2action_seq(edge_used, point_used, ve_matrix, map_adj):
     
     return cact_seq, ract_seq
 
-def run(caction_seq, raction_seq, env, agent_num):
+def choice_route(prob, mask):
+    prob = torch.tensor(prob, dtype=torch.float32)
+    mask = torch.LongTensor(mask)
+    masked_prob = prob.masked_fill(~mask.bool(), 0)
+    dist = Categorical(probs=masked_prob)
+    action = dist.probs.argmax() # type: ignore
+    return action.numpy().flatten()
+
+def run(cact_pi_seq, ract_pi_seq, env, agent_num):
     default_caction = np.zeros(agent_num) # 默认动作
     default_raction = np.zeros(agent_num) # 默认动作
     default_action = (default_caction, default_raction)
     
-    # caction_seq = [
-    #     [c * 节点数量] * 智能体数量
-    # ]
-    # raction_seq = [
-    #     [r * 节点数量] * 智能体数量
+    # caction_seq = [[0, 13], [0, 13]]
+    # ract_pi_seq = [
+    #     [
+    #         [0, 1, 0, 0, 0],
+    #         [0, 0, 1, 0, 0],
+    #         [0, 0, 0, 0, 1],
+    #         [0, 0, 0, 0, 1],
+    #         [0, 0, 0, 0, 0]
+    #     ],
+    #     [
+    #         [0, 1, 0, 0, 0],
+    #         [0, 0, 1, 0, 0],
+    #         [0, 0, 0, 0, 1],
+    #         [0, 0, 0, 0, 1],
+    #         [0, 0, 0, 0, 0]
+    #     ]
     # ]
         
     agents_total_reward = [0 for _ in range(agent_num)]
@@ -56,8 +77,10 @@ def run(caction_seq, raction_seq, env, agent_num):
         raction_n = np.array([-1 for _ in range(agent_num)])
         for i, agent_i in enumerate(activate_agent_i):
             if activate_to_act[i]:
-                caction_n[agent_i] = caction_seq[agent_i].pop(0)
-                raction_n[agent_i] = raction_seq[agent_i].pop(0)
+                pos = int(obs_n[agent_i][-1])
+                caction_n[agent_i] = cact_pi_seq[agent_i][pos]
+                ract = choice_route(ract_pi_seq[agent_i][pos], obs_mask_n[agent_i])
+                raction_n[agent_i] = ract[0]
                 if env.caction_list[caction_n[agent_i]] <= obs_n[agent_i][0]:
                     caction_n[agent_i] = 0
 
@@ -92,13 +115,20 @@ if __name__ == "__main__":
     agent_num = env.agent_num # 智能体数量
     num_cs = env.num_cs # 充电站数量
     
-    # v_charge = [[0, 0, 5, 0, 0]] * agent_num 在每个点上的动作编号，整数
-    # edge_seq = [[1, 1, 0, 0, 1, 0]] * agent_num 选择哪些路段，满足约束的话可以串起来形成路径，但生成解生成不出来
     # section_p = [[点个数] * 点个数] * agent_num 每个点选择下一个点的概率，可以mask
-    caction_seq = [[0, 13], [0, 13]]
-    raction_seq = [[2, 4], [2, 4]]
-    
+    cact_pi_seq = [
+            [0, 0, 13, 0, 0], 
+            [0, 0, 13, 0, 0]
+        ]
+    # raction_seq = [[2, 4], [2, 4]]
     ract_pi_seq = [
+        [
+            [0, 1, 0, 0, 0],
+            [0, 0, 1, 0, 0],
+            [0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0]
+        ],
         [
             [0, 1, 0, 0, 0],
             [0, 0, 1, 0, 0],
@@ -108,5 +138,5 @@ if __name__ == "__main__":
         ]
     ]
     
-    total_reward = run(caction_seq, raction_seq, env, agent_num)
+    total_reward = run(cact_pi_seq, ract_pi_seq, env, agent_num)
     print(total_reward)

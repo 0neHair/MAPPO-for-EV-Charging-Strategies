@@ -98,9 +98,10 @@ class Multi_EV_Env(gym.Env):
         # 电量状态设置
         # 观测
         self.state_name = [
-                'agent_SOC', 'exp_SOC', 
-                'agent_usingtime', 'agent_charging_ts', 'agent_next_waiting', 'is_finish'
-                ] + [0 for _ in range(self.num_cs)] # 位置编码
+                    'agent_SOC', 'exp_SOC', 
+                    'agent_usingtime', 'agent_charging_ts', 'agent_next_waiting', 'is_finish', 
+                    'agent_tpos'
+                ] # 位置编码
         self.state_dim = len(self.state_name) # 状态维度
         if self.ps:
             self.state_dim += self.agent_num # 状态维度
@@ -326,11 +327,13 @@ class Multi_EV_Env(gym.Env):
         else:
             agent_next_waiting = self.cs_waiting_time[agent_tpos]
             
-        onehot_pos = [0 for _ in range(self.num_cs)]
-        onehot_pos[agent_tpos] = 1
+        # onehot_pos = [0 for _ in range(self.num_cs)]
+        # onehot_pos[agent_tpos] = 1
         cobs = [
-            agent_SOC, agent_exp_SOC, agent_usingtime, agent_charging_ts, agent_next_waiting, agent_complete_trip
-            ] + onehot_pos
+                agent_SOC, agent_exp_SOC, agent_usingtime, 
+                agent_charging_ts, agent_next_waiting,
+                agent_complete_trip, agent_tpos
+            ]
         
         # 计算当前能够到达的CS，进而获得还能去的CS的子图
         # reachable_cs = self.map_rea_index[agent_tpos]
