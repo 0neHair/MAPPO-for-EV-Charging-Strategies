@@ -104,13 +104,23 @@ def Evaluate(env, agents, args, mode, agent_num):
         df_ev_c = pd.DataFrame(columns=ccolumns)
         time_seq = ev.time_memory
         for i in range(len(time_seq)):
-            df_ev_c.loc[i, 'time'] = round(time_seq[i], 2)
-            df_ev_c.loc[i, 'distance'] = ev.trip_memory[i]
-            df_ev_c.loc[i, 'position'] = ev.pos_memory[i]
-            df_ev_c.loc[i, 'state'] = ev.state_memory[i]
-            df_ev_c.loc[i, 'act_mode'] = int(ev.activity_memory[i])
-            df_ev_c.loc[i, 'SOC'] = ev.SOC_memory[i]
-            df_ev_c.loc[i, 'action'] = ev.action_choose_memory[i]
+            if ev.action_choose_memory[i] != -1:
+                assert 'P' in ev.pos_memory[i], "BUG exists"
+                df_ev_c.loc[i, 'time'] = round(time_seq[i], 2)
+                df_ev_c.loc[i, 'distance'] = ev.trip_memory[i]
+                df_ev_c.loc[i, 'position'] = 'P' + str(int(ev.pos_memory[i][1:])-1)
+                df_ev_c.loc[i, 'state'] = ev.state_memory[i]
+                df_ev_c.loc[i, 'cact_mode'] = int(ev.activity_memory[i])
+                df_ev_c.loc[i, 'SOC'] = env.caction_list[ev.action_choose_memory[i]]
+                df_ev_c.loc[i, 'action'] = ev.action_choose_memory[i]
+            else:
+                df_ev_c.loc[i, 'time'] = round(time_seq[i], 2)
+                df_ev_c.loc[i, 'distance'] = ev.trip_memory[i]
+                df_ev_c.loc[i, 'position'] = ev.pos_memory[i]
+                df_ev_c.loc[i, 'state'] = ev.state_memory[i]
+                df_ev_c.loc[i, 'cact_mode'] = int(ev.activity_memory[i])
+                df_ev_c.loc[i, 'SOC'] = ev.SOC_memory[i]
+                df_ev_c.loc[i, 'action'] = ev.action_choose_memory[i]
         df_ev_c.to_csv(dir + '/EV/EV{}.csv'.format(ev.id), index=False)
         df_ev_r = pd.DataFrame(columns=rcolumns)
         edge_i = 0

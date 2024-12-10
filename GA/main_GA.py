@@ -10,18 +10,18 @@ import matplotlib.pyplot as plt
 from GA import GA_tqdm
 
 from env.EV_Sce_Env import EV_Sce_Env
-from run_env import run, x2action_seq
+from run_env import run
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sce_name", type=str, default="test_2")
+    parser.add_argument("--sce_name", type=str, default="HY")
     parser.add_argument("--filename", type=str, default="T1")
     parser.add_argument("--train", type=bool, default=False)
     parser.add_argument("--randomize", type=bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
     
-    parser.add_argument("--size_pop", type=int, default=10)
-    parser.add_argument("--max_iter", type=int, default=200)
+    parser.add_argument("--size_pop", type=int, default=50)
+    parser.add_argument("--max_iter", type=int, default=2000)
     parser.add_argument("--prob_mut", type=float, default=0.05)
     
     arguments = parser.parse_args()
@@ -57,7 +57,7 @@ def obj_func(x):
         ract_pi.append(x[i:i+pos_num*pos_num].reshape([pos_num, pos_num]))
         i += pos_num*pos_num
     
-    reward = run(cact_pi, ract_pi, env, agent_num)
+    reward = run(cact_pi, ract_pi, env, agent_num, args)
     return -reward
 
 # cact_pi = [[0, 13], [0, 13]] * agent_num 在每个点上的充电动作编号，整数

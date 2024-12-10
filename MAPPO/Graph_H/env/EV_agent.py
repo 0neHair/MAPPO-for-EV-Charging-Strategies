@@ -185,6 +185,11 @@ class EV_Agent():
             若有则消耗
             若无则检查是否到达决策点或终点，设置指示变量
         '''
+        if self.is_charging == True:
+            self.action_choose_memory.append(self.caction_memory[-1])
+        else:
+            self.action_choose_memory.append(-1)
+            
         if self.stop_update == False and self.is_active == True:
             if self.is_charging: 
                 self.current_position = self.current_cs
@@ -226,10 +231,6 @@ class EV_Agent():
         self.activity_memory.append(len(self.caction_memory) * self.is_charging)
         self.state_memory.append(self.ev_state)
         self.SOC_memory.append(self.SOC)
-        if self.is_charging == True:
-            self.action_choose_memory.append(self.caction_memory[-1])
-        else:
-            self.action_choose_memory.append(-1)
         
     def set_caction(self, caction=0, waiting_time=0.0, charging_time=0.0):
         '''

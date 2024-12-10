@@ -100,7 +100,6 @@ def Evaluate(env, agents, args, mode, agent_num):
     for i in range(agent_num):
         total_reward += agents_total_reward[i]
         
-    
     dir = 'output/{}_{}_{}'.format(args.sce_name, args.filename, mode)
     if not os.path.exists(dir):
         os.mkdir(dir)
