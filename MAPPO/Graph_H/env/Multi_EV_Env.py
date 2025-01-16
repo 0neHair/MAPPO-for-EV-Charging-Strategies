@@ -97,7 +97,7 @@ class Multi_EV_Env(gym.Env):
         
         # 电量状态设置
         # 观测
-        self.state_name = [
+        self.state_name = [ 
                 'agent_SOC', 'exp_SOC', 
                 'agent_usingtime', 'agent_charging_ts', 'agent_next_waiting', 'is_finish'
                 ] + [0 for _ in range(self.num_cs)] # 位置编码

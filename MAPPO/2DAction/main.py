@@ -23,16 +23,16 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sce_name", type=str, default="HY")
-    parser.add_argument("--filename", type=str, default="T2")
-    parser.add_argument("--train", type=bool, default=False)
+    parser.add_argument("--sce_name", type=str, default="SY_3")
+    parser.add_argument("--filename", type=str, default="T4")
+    parser.add_argument("--train", type=bool, default=True)
 
     parser.add_argument("--ctde", type=bool, default=True)
     parser.add_argument("--expert", type=bool, default=False)
     parser.add_argument("--randomize", type=bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--num_env", type=int, default=1) # 环境数
-    parser.add_argument("--num_update", type=int, default=2000) # 最大更新轮次
+    parser.add_argument("--num_update", type=int, default=3000) # 最大更新轮次
     parser.add_argument("--save_freq", type=int, default=50) # 保存频率
 
     parser.add_argument("--ps", type=bool, default=False) # parameter sharing
@@ -40,7 +40,7 @@ def parse_args():
     parser.add_argument("--policy_arch", type=list, default=[32, 32, 32])
     parser.add_argument("--value_arch", type=list, default=[32, 32, 32])
 
-    parser.add_argument("--lr", type=float, default=4e-4) # 学习率
+    parser.add_argument("--lr", type=float, default=2.5e-4) # 学习率
     parser.add_argument("--gamma", type=float, default=0.95) # 折减因子
     parser.add_argument("--gae_lambda", type=float, default=0.95) # ？？？
     parser.add_argument("--k_epoch", type=int, default=15) # 策略更新次数

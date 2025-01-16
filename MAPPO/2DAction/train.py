@@ -123,8 +123,9 @@ def Train(envs, agents, writer, args, mode, agent_num):
                     total_reward = 0 
                     for j in range(agent_num):
                         total_reward += agents_total_reward[e][j]
-                        # writer.add_scalar("Single_Env/reward_{}_agent_{}".format(e, j), agents_total_reward[e][j], i_episode)
-                    # writer.add_scalar("Single_Env/reward_{}".format(e), total_reward, i_episode)
+                        writer.add_scalar("Single_Env/reward_{}_agent_{}".format(e, j), agents_total_reward[e][j], i_episode)
+                    # writer.add_scalar("Single_Env/reward_{}".format(e), total_reward, run_times[e])
+                    writer.add_scalar("Single_Env/reward_{}".format(e), total_reward, i_episode)
                     # 统计总体奖励
                     if total_reward > total_best_reward:
                         total_best_reward = total_reward
@@ -173,9 +174,9 @@ def Train(envs, agents, writer, args, mode, agent_num):
                 total_actor_loss += actor_loss
                 total_critic_loss += critic_loss
                 total_entropy_loss += entropy_loss
-                # writer.add_scalar("Loss/agent_{}_actor_loss".format(i), actor_loss, i_episode)
-                # writer.add_scalar("Loss/agent_{}_critic_loss".format(i), critic_loss, i_episode)
-                # writer.add_scalar("Loss/agent_{}_entropy_loss".format(i), entropy_loss, i_episode)
+                writer.add_scalar("Loss/agent_{}_actor_loss".format(i), actor_loss, i_episode)
+                writer.add_scalar("Loss/agent_{}_critic_loss".format(i), critic_loss, i_episode)
+                writer.add_scalar("Loss/agent_{}_entropy_loss".format(i), entropy_loss, i_episode)
                 if i_episode % args.save_freq == 0:
                     agent.save("save/{}_{}/agent_{}_{}".format(args.sce_name, args.filename, i, mode))
                 

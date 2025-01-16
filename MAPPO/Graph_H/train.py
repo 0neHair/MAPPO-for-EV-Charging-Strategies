@@ -229,8 +229,8 @@ def Train(envs, agents, writer, args, mode, agent_num):
                     total_reward = 0 
                     for j in range(agent_num):
                         total_reward += agents_total_reward[e][j]
-                    #     writer.add_scalar("Single_Env/reward_{}_agent_{}".format(e, j), agents_total_reward[e][j], i_episode)
-                    # writer.add_scalar("Single_Env/reward_{}".format(e), total_reward, i_episode)
+                        writer.add_scalar("Single_Env/reward_{}_agent_{}".format(e, j), agents_total_reward[e][j], i_episode)
+                    writer.add_scalar("Single_Env/reward_{}".format(e), total_reward, i_episode)
                     # 统计总体奖励
                     if total_reward > total_best_reward:
                         total_best_reward = total_reward

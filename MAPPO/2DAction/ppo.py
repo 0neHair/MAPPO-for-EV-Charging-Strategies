@@ -212,6 +212,7 @@ class PPOAgent(object):
         return actor_loss.item(), critic_loss.item(), entropy_loss.item()
 
     def lr_decay(self, step):
+        return self.lr
         factor = 1 - step / self.num_update
         lr = factor * self.lr
         for p in self.optimizer.param_groups:
