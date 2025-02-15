@@ -216,17 +216,12 @@ class PPOAgent(object):
         return action.cpu().numpy().flatten(), log_prob.cpu().numpy().flatten()
     
     def train(self):
-        if self.ps:
-            pass
-            # state, share_state, action, log_prob, reward, next_state, next_share_state, done = self.rolloutBuffer.pull()
-            # buffer_step = self.rolloutBuffer.steps
-        else:
-            state, share_state, caction, clog_prob, creward, next_state, next_share_state, cdone, \
-                obs_feature, global_cs_feature, \
-                    raction, raction_mask, rlog_prob, rreward, \
-                        next_obs_feature, next_global_cs_feature, \
-                            rdone = self.rolloutBuffer.pull()
-            buffer_step = self.rolloutBuffer.steps
+        state, share_state, caction, clog_prob, creward, next_state, next_share_state, cdone, \
+            obs_feature, global_cs_feature, \
+                raction, raction_mask, rlog_prob, rreward, \
+                    next_obs_feature, next_global_cs_feature, \
+                        rdone = self.rolloutBuffer.pull()
+        buffer_step = self.rolloutBuffer.steps
         
         with torch.no_grad():
             # there are N = num_env independent environments, cannot flatten state here

@@ -1,10 +1,3 @@
-'''
-方案2：
-    EV在CS选择充到某个目标电量，该值一定大于当前电力
-    设置当目标电量大于1时，视为不充电
-    
-    加入路径问题，采用图卷积网络处理路径信息
-'''
 import torch
 import argparse
 import gymnasium as gym
@@ -25,7 +18,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--sce_name", type=str, default="SY_3")
     parser.add_argument("--filename", type=str, default="T4")
-    parser.add_argument("--train", type=bool, default=True)
+    parser.add_argument("--train", type=bool, default=False)
 
     parser.add_argument("--ctde", type=bool, default=True)
     parser.add_argument("--expert", type=bool, default=False)

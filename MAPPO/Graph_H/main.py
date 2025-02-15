@@ -1,10 +1,3 @@
-'''
-方案2：
-    EV在CS选择充到某个目标电量，该值一定大于当前电力
-    设置当目标电量大于1时，视为不充电
-    
-    加入路径问题，采用图卷积网络处理路径信息
-'''
 import torch
 import argparse
 import gymnasium as gym
@@ -16,8 +9,6 @@ import time
 import os
 from env.EV_Sce_Env import EV_Sce_Env
 from env_wrappers import SubprocVecEnv, DummyVecEnv
-from train import Train
-from evaluate import Evaluate
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
@@ -25,14 +16,14 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--sce_name", type=str, default="SY_3")
     parser.add_argument("--filename", type=str, default="T2")
-    parser.add_argument("--train", type=bool, default=True)
+    parser.add_argument("--train", type=bool, default=False)
 
     parser.add_argument("--ctde", type=bool, default=True)
     parser.add_argument("--expert", type=bool, default=False)
     parser.add_argument("--randomize", type=bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--num_env", type=int, default=1) # 环境数
-    parser.add_argument("--num_update", type=int, default=3000) # 最大更新轮次
+    parser.add_argument("--num_update", type=int, default=500) # 最大更新轮次
     parser.add_argument("--save_freq", type=int, default=50) # 保存频率
 
     parser.add_argument("--ps", type=bool, default=False) # parameter sharing
@@ -124,31 +115,46 @@ def main():
 
     mappo = []
     if args.ps:
-        pass
-        # from ppo import PPOAgent
-        # from ppo_ps import PPOPSAgent
-        # from buffer import SharedRolloutBuffer
+        from ppo import PPOAgent
+        from buffer import RolloutBuffer
+        from train_ps import Train
+        from evaluate import Evaluate
         
-        # buffer = SharedRolloutBuffer(
-        #         steps=args.single_batch_size, num_env=args.num_env,
-        #         state_shape=state_shape, share_shape=share_shape, action_shape=(1, ), # type: ignore
-        #         agent_num=agent_num,
-        #         device=device
-        #         )
-        # ppo = PPOPSAgent(
-        #     state_dim=state_dim, share_dim=share_dim, action_dim=action_dim, 
-        #     action_list=action_list,
-        #     buffer=buffer, device=device, agent_num=agent_num,
-        #     args=args
-        #     )
-        # path = "save/{}_{}".format(args.sce_name, args.filename)
-        # if not os.path.exists(path):
-        #     os.makedirs(path)
-        # # ppo.load("save/{}_{}/agent_{}".format(args.sce_name, args.filename, mode))
-        # mappo.append(ppo)
+        for i in range(agent_num):
+            buffer = RolloutBuffer(
+                steps=args.single_batch_size, num_env=args.num_env,
+                state_shape=state_shape, share_shape=share_shape, caction_shape=(1, ), # type: ignore
+                edge_index=edge_index,
+                obs_features_shape=obs_features_shape, global_features_shape=global_features_shape, raction_shape=(1, ), # type: ignore
+                raction_mask_shape=raction_mask_shape,
+                device=device
+                )
+            ppo = PPOAgent(
+                state_dim=state_dim, share_dim=share_dim, 
+                caction_dim=caction_dim, caction_list=caction_list,
+                obs_features_shape=obs_features_shape, global_features_shape=global_features_shape, 
+                raction_dim=raction_dim, raction_list=raction_list,
+                edge_index=edge_index, buffer=buffer, device=device, args=args
+                )
+            if args.train: # train
+                path = "save/{}_{}".format(args.sce_name, args.filename)
+                if not os.path.exists(path):
+                    os.makedirs(path)
+            else: # evaluate
+                ppo.load("save/{}_{}/agent_{}".format(args.sce_name, args.filename, mode))
+            mappo.append(ppo)
+        print("Random: {}   Learning rate: {}   Gamma: {}".format(args.randomize, args.lr, args.gamma))
+        if args.train: # train
+            best_reward, best_step = Train(envs, mappo, writer, args, mode, agent_num)
+            writer.close()
+            print("best_reward:{}   best_step:{}".format(best_reward, best_step))
+        else: # evaluate
+            Evaluate(envs, mappo, args, mode, agent_num) 
     else:
         from ppo import PPOAgent
         from buffer import RolloutBuffer
+        from train import Train
+        from evaluate import Evaluate
         
         for i in range(agent_num):
             buffer = RolloutBuffer(
@@ -174,13 +180,13 @@ def main():
                 ppo.load("save/{}_{}/agent_{}_{}".format(args.sce_name, args.filename, i, mode))
             mappo.append(ppo)
         
-    print("Random: {}   Learning rate: {}   Gamma: {}".format(args.randomize, args.lr, args.gamma))
-    if args.train: # train
-        best_reward, best_step = Train(envs, mappo, writer, args, mode, agent_num)
-        writer.close()
-        print("best_reward:{}   best_step:{}".format(best_reward, best_step))
-    else: # evaluate
-        Evaluate(envs, mappo, args, mode, agent_num)
+        print("Random: {}   Learning rate: {}   Gamma: {}".format(args.randomize, args.lr, args.gamma))
+        if args.train: # train
+            best_reward, best_step = Train(envs, mappo, writer, args, mode, agent_num)
+            writer.close()
+            print("best_reward:{}   best_step:{}".format(best_reward, best_step))
+        else: # evaluate
+            Evaluate(envs, mappo, args, mode, agent_num)
 
 if __name__ == '__main__':
     main()
