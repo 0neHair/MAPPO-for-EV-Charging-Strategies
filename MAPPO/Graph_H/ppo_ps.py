@@ -127,12 +127,12 @@ class Network(nn.Module):
 
 class PPOAgent(object):
     def __init__(
-        self, 
-        state_dim, share_dim, caction_dim, caction_list,
-        obs_features_shape, global_features_shape, raction_dim, raction_list,
-        edge_index, buffer, device, 
-        args
-    ):
+            self, 
+            state_dim, share_dim, caction_dim, caction_list,
+            obs_features_shape, global_features_shape, raction_dim, raction_list,
+            edge_index, buffer_list, device, 
+            args
+        ):
         self.device = device
         # 充电相关
         self.state_dim = state_dim
@@ -176,7 +176,7 @@ class PPOAgent(object):
         self.route_network.value_batch = self.route_network.value_batch.to(self.device)
         self.route_optimizer = torch.optim.Adam(self.route_network.parameters(), lr=self.lr, eps=1e-5)
 
-        self.rolloutBuffer = buffer
+        self.rolloutBuffer_list = buffer_list
 
     def select_caction(self, state):
         # state = torch.unsqueeze(torch.tensor(state, dtype=torch.float32), 0).to(self.device)
@@ -220,8 +220,8 @@ class PPOAgent(object):
             obs_feature, global_cs_feature, \
                 raction, raction_mask, rlog_prob, rreward, \
                     next_obs_feature, next_global_cs_feature, \
-                        rdone = self.rolloutBuffer.pull()
-        buffer_step = self.rolloutBuffer.steps
+                        rdone = self.rolloutBuffer_list[0].pull()
+        buffer_step = self.rolloutBuffer_list[0].steps
         
         with torch.no_grad():
             # there are N = num_env independent environments, cannot flatten state here

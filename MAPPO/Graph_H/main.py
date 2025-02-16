@@ -14,8 +14,8 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sce_name", type=str, default="SY_3")
-    parser.add_argument("--filename", type=str, default="T2")
+    parser.add_argument("--sce_name", type=str, default="HY_2")
+    parser.add_argument("--filename", type=str, default="T1")
     parser.add_argument("--train", type=bool, default=False)
 
     parser.add_argument("--ctde", type=bool, default=True)
@@ -115,11 +115,12 @@ def main():
 
     mappo = []
     if args.ps:
-        from ppo import PPOAgent
+        from ppo_ps import PPOAgent
         from buffer import RolloutBuffer
         from train_ps import Train
         from evaluate import Evaluate
         
+        buffer_list = []
         for i in range(agent_num):
             buffer = RolloutBuffer(
                 steps=args.single_batch_size, num_env=args.num_env,
@@ -129,20 +130,21 @@ def main():
                 raction_mask_shape=raction_mask_shape,
                 device=device
                 )
-            ppo = PPOAgent(
-                state_dim=state_dim, share_dim=share_dim, 
-                caction_dim=caction_dim, caction_list=caction_list,
-                obs_features_shape=obs_features_shape, global_features_shape=global_features_shape, 
-                raction_dim=raction_dim, raction_list=raction_list,
-                edge_index=edge_index, buffer=buffer, device=device, args=args
-                )
-            if args.train: # train
-                path = "save/{}_{}".format(args.sce_name, args.filename)
-                if not os.path.exists(path):
-                    os.makedirs(path)
-            else: # evaluate
-                ppo.load("save/{}_{}/agent_{}".format(args.sce_name, args.filename, mode))
-            mappo.append(ppo)
+            buffer_list.append(buffer)
+        ppo = PPOAgent(
+            state_dim=state_dim, share_dim=share_dim, 
+            caction_dim=caction_dim, caction_list=caction_list,
+            obs_features_shape=obs_features_shape, global_features_shape=global_features_shape, 
+            raction_dim=raction_dim, raction_list=raction_list,
+            edge_index=edge_index, buffer_list=buffer_list, device=device, args=args
+            )
+        if args.train: # train
+            path = "save/{}_{}".format(args.sce_name, args.filename)
+            if not os.path.exists(path):
+                os.makedirs(path)
+        else: # evaluate
+            ppo.load("save/{}_{}/agent_{}".format(args.sce_name, args.filename, mode))
+        mappo.append(ppo)
         print("Random: {}   Learning rate: {}   Gamma: {}".format(args.randomize, args.lr, args.gamma))
         if args.train: # train
             best_reward, best_step = Train(envs, mappo, writer, args, mode, agent_num)

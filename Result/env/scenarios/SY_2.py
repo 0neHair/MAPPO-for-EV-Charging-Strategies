@@ -57,10 +57,14 @@ class Scenario(): # Sioux-Falls transportation system
         # 智能体
         self.agents = [] # 智能体列表
         total_vehicle_num = 30
-        active_time_list = np.sort(np.round(np.random.uniform(0, 1, (total_vehicle_num)), 2))
-        for i in range(0, len(active_time_list)):
-            SOC_init = 1.0
-            SOC_exp = 0.3
+        self.active_time_list = np.sort(np.round(np.random.uniform(0, 1, (total_vehicle_num)), 2))
+        self.SOC_init_list = np.round(np.random.uniform(0.75, 0.95, (total_vehicle_num)), 2)
+        self.SOC_exp_list = np.round(np.random.uniform(0.2, 0.5, (total_vehicle_num)), 2)
+        for i in range(0, len(self.active_time_list)):
+            # SOC_init = 0.8
+            # SOC_exp = 0.4
+            SOC_init = self.SOC_init_list[i]
+            SOC_exp = self.SOC_exp_list[i]
             agent = EV_Agent(
                 id=i, frame=self.frame, 
                 # route=self.route, 
@@ -69,7 +73,7 @@ class Scenario(): # Sioux-Falls transportation system
                 edge_attr=self.edge_attr,
                 caction_list=self.caction_list, 
                 raction_list=self.raction_list, 
-                enter_time=active_time_list[i], 
+                enter_time=self.active_time_list[i], 
                 SOC_init=SOC_init, SOC_exp=SOC_exp, 
                 SOC90_penalty=0, SOC20_penalty=0, 
                 consume=0.15, speed=100, E_max=60

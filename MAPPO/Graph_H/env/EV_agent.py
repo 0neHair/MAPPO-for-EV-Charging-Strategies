@@ -7,17 +7,17 @@ import numpy as np
 
 class EV_Agent():
     def __init__(
-        self, 
-        id, frame, 
-        map_adj,
-        edge_index,
-        edge_attr,
-        caction_list, 
-        raction_list, 
-        enter_time,
-        SOC_init=0.5, SOC_exp=0.5, 
-        SOC90_penalty=0, SOC20_penalty=0,
-        consume=0.15, speed=100, E_max=60
+            self, 
+            id, frame, 
+            map_adj,
+            edge_index,
+            edge_attr,
+            caction_list, 
+            raction_list, 
+            enter_time,
+            SOC_init=0.5, SOC_exp=0.5, 
+            SOC90_penalty=0, SOC20_penalty=0,
+            consume=0.15, speed=100, E_max=60
         ):
         self.id = id
         self.frame = frame #  帧
