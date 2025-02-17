@@ -16,8 +16,8 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sce_name", type=str, default="SY_3")
-    parser.add_argument("--filename", type=str, default="T4")
+    parser.add_argument("--sce_name", type=str, default="SY_4")
+    parser.add_argument("--filename", type=str, default="T2")
     parser.add_argument("--train", type=bool, default=False)
 
     parser.add_argument("--ctde", type=bool, default=True)
