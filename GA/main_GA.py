@@ -14,14 +14,14 @@ from run_env import run
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--sce_name", type=str, default="HY")
+    parser.add_argument("--sce_name", type=str, default="SY_4")
     parser.add_argument("--filename", type=str, default="T3")
-    parser.add_argument("--train", type=bool, default=True)
+    parser.add_argument("--train", type=bool, default=False)
     parser.add_argument("--randomize", type=bool, default=False)
     parser.add_argument("--seed", type=int, default=0)
     
-    parser.add_argument("--size_pop", type=int, default=50)
-    parser.add_argument("--max_iter", type=int, default=2000)
+    parser.add_argument("--size_pop", type=int, default=20)
+    parser.add_argument("--max_iter", type=int, default=3000)
     parser.add_argument("--prob_mut", type=float, default=0.05)
     
     arguments = parser.parse_args()

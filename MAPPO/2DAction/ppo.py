@@ -66,7 +66,6 @@ class Network(nn.Module):
         return value
 
     def get_distribution(self, state, state_mask):
-        hidden = self.policy_net(state)
         if self.caction_list.dim() == state.dim():
             mask = (self.caction_list > state[0]+0.05).long().bool()
         else:
@@ -194,7 +193,7 @@ class PPOAgent(object):
                 new_rlog_prob = new_rdist.log_prob(raction[index].squeeze()).unsqueeze(1)
                 new_log_prob = new_clog_prob + new_rlog_prob # TODO: right?
                 new_values = self.network.get_value(share_state[index]).view(self.mini_batch_size, -1)
-                entropy = new_cdist.entropy()
+                entropy = new_cdist.entropy() + new_rdist.entropy() # TODO: right?
                 ratios = torch.exp(new_log_prob - log_prob[index])
 
                 surrogate1 = ratios * norm_adv[index]
