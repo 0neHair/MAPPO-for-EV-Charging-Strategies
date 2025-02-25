@@ -200,10 +200,10 @@ class Multi_EV_Env(gym.Env):
             for i, agent in enumerate(self.agents_active):
 
                 agent.step(time=self.total_time) # 智能体运行
-                agent.route = self.shortest_way()
                 
                 if round(self.total_time, 2) >= agent.enter_time and not agent.is_active: # 到达EV进入时间，则启动
                     agent.activate()
+                    agent.route = self.shortest_way()
                 # if agent.is_routing: # 如果在分叉点，记录并跳出
                 #     run_step = False
                 #     activate_agent_ri.append(agent.id)

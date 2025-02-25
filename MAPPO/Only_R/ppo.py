@@ -126,7 +126,7 @@ class PPOAgent(object):
         state_mask = torch.LongTensor(state_mask).to(self.device)
         with torch.no_grad():
             rdist = self.network.get_distribution(state, state_mask)
-            caction = (state[0] < 0.15).int() * len(self.caction_list)
+            caction = (state[0] < 0.15).int() * (len(self.caction_list)-1)
             raction = rdist.sample()
             rlog_prob = rdist.log_prob(raction)
         return caction.cpu().numpy().flatten(), raction.cpu().numpy().flatten(), rlog_prob.cpu().numpy().flatten()
